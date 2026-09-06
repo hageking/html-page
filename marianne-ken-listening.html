@@ -1,0 +1,158 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Marianne & Ken Listening Practice</title>
+<style>
+:root{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color-scheme:light dark}
+body{max-width:900px;margin:0 auto;padding:20px;line-height:1.6}
+h1{font-size:1.35rem;margin:0 0 14px}
+.card{border:1px solid #8885;border-radius:16px;padding:16px;margin:12px 0}
+.controls{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px}
+label{display:flex;flex-direction:column;gap:6px;font-size:.9rem}
+select,input,button{font:inherit;padding:10px;border-radius:10px;border:1px solid #8887;background:transparent}
+.buttons{display:flex;flex-wrap:wrap;gap:10px;margin-top:14px}
+button{min-width:110px;cursor:pointer}
+button.primary{font-weight:700}
+#status{font-size:.9rem;opacity:.8;margin-top:10px}
+#current{padding:14px;border-radius:12px;background:#8882;min-height:3.2em}
+small{opacity:.75}
+</style>
+</head>
+<body>
+<h1>🎧 Marianne & Ken リスニング練習</h1>
+<div class="card">
+  <div class="controls">
+    <label>ナレーター
+      <select id="voiceNarrator"></select>
+    </label>
+    <label>Marianne
+      <select id="voiceMarianne"></select>
+    </label>
+    <label>Ken
+      <select id="voiceKen"></select>
+    </label>
+    <label>速度
+      <input id="rate" type="range" min="0.75" max="1.15" step="0.05" value="0.95">
+      <span id="rateValue">0.95×</span>
+    </label>
+    <label>空欄の停止時間
+      <input id="blankPause" type="range" min="1" max="5" step="0.5" value="2.5">
+      <span id="pauseValue">2.5秒</span>
+    </label>
+  </div>
+  <div class="buttons">
+    <button class="primary" id="play">▶ 最初から再生</button>
+    <button id="pause">⏸ 一時停止</button>
+    <button id="resume">▶ 再開</button>
+    <button id="stop">■ 停止</button>
+  </div>
+  <div id="status">端末に入っている英語音声を読み込み中...</div>
+</div>
+<div class="card">
+  <div id="current">再生すると、現在の文がここに表示されます。</div>
+  <small>端末のSpeech Synthesis音声を使うため、前の機械音声より自然に聞こえます。iPhoneでは「Moira」「Samantha」「Daniel」などが候補に出る場合があります。</small>
+</div>
+<script>
+const script = [
+['n','In the following passage, Marianne and Ken are longtime friends who have grown up in the same small town in Ireland.'],
+['n','Marianne climbs out of the shower now and wraps herself in the blue bath towel. The mirror is steamed over. She opens the door and Ken looks back at her.'],
+['m','Is something up?'],
+['k','I just got this email.'],
+['m','Oh? From who?'],
+['n','Ken looks dumbly at the laptop and then back at her. His eyes look red and sleepy. He’s sitting with his knees raised up under the blanket, the laptop glowing into his face.'],
+['m','Ken, from who?'],
+['k','From this university in New York. It looks like they’re offering me a place on the Master’s of Fine Arts. You know, the creative writing program.'],
+['n','Marianne stands there. Her hair is still wet, soaking slowly through the cloth of her blouse.'],
+['m','You didn’t tell me you applied for that.'],
+['n','Ken just looks at her.'],
+['pause','A'],
+['m','I’m not surprised they would accept you. I’m just surprised you didn’t mention it.'],
+['n','Ken nods, his face inexpressive, and then looks back at the laptop.'],
+['k','I don’t know. I should have told you but I honestly thought it was such a long shot.'],
+['m','Well, that’s no reason not to tell me.'],
+['k','It doesn’t matter. It’s not like I’m going to go. I don’t even know why I applied.'],
+['n','Marianne lifts the towel off the wardrobe door and starts using it to massage the ends of her hair slowly. She sits down at the desk chair.'],
+['pause','B'],
+['k','Okay? Sometimes I feel embarrassed telling you stuff like that because it just seems stupid. To be honest, I still look up to you a lot. I don’t want you to think of me as, I don’t know, out of my mind.'],
+['n','Marianne squeezes her hair through the towel, feeling the coarse, grainy texture of the individual strands.'],
+['m','You should go. To New York, I mean. You should accept the offer. You should go.'],
+['n','Ken says nothing. She looks up. The wall behind him is yellow like butter.'],
+['k','No.'],
+['m','I’m sure you could get funding.'],
+['pause','C'],
+['k','I thought you wanted to stay here next year.'],
+['m','I can stay, and you can go. It’s just a year. I think you should do it.'],
+['n','Ken makes a strange, confused noise, almost like a laugh. He touches his neck. Marianne puts the towel down and starts brushing the knots out of her hair slowly.'],
+['k','That’s ridiculous. I’m not going to New York without you. I wouldn’t even be here if it wasn’t for you.'],
+['pause','D'],
+['n','Marianne thinks, he wouldn’t be. He would be somewhere else entirely, living a different kind of life.'],
+['k','I’d miss you too much. I’d be sick, honestly.'],
+['m','At first. But it would get better.'],
+['n','They sit in silence now, Marianne moving the brush methodically through her hair, feeling for knots and slowly, patiently untangling them. There’s no point in being impatient anymore.'],
+['k','You know I love you. I’m never going to feel the same way for someone else.'],
+['n','Marianne nods, okay. He’s telling the truth.'],
+['k','To be honest, I don’t know what to do. Say you want me to stay and I will.'],
+['n','Marianne closes her eyes. He probably won’t come back, she thinks. Or he will, differently. What they have now they can never have back again. But for her the pain of loneliness will be nothing to the pain that she used to feel, of being unworthy. He brought her goodness like a gift and now it belongs to her. Meanwhile his life opens out before him in all directions at once. They’ve done a lot of good for each other. Really, she thinks, really. People can really change one another.'],
+['m','You should go. I’ll always be here.'],
+['pause','E']
+];
+
+let voices=[], idx=0, stopped=true, timer=null;
+const $=id=>document.getElementById(id);
+const els={n:$('voiceNarrator'),m:$('voiceMarianne'),k:$('voiceKen')};
+
+function loadVoices(){
+  voices = speechSynthesis.getVoices().filter(v => /^en(-|_)/i.test(v.lang));
+  if(!voices.length) voices = speechSynthesis.getVoices();
+  for(const el of Object.values(els)){
+    el.innerHTML='';
+    voices.forEach((v,i)=>{const o=document.createElement('option');o.value=i;o.textContent=`${v.name} (${v.lang})`;el.appendChild(o)});
+  }
+  function pick(preferred){
+    for(const name of preferred){const i=voices.findIndex(v=>v.name.toLowerCase().includes(name.toLowerCase()));if(i>=0)return i}
+    return 0;
+  }
+  els.n.value=pick(['Moira','Samantha','Ava','Karen','Daniel']);
+  els.m.value=pick(['Samantha','Ava','Moira','Karen']);
+  els.k.value=pick(['Daniel','Alex','Oliver','Arthur','Tom']);
+  $('status').textContent=voices.length?`${voices.length}個の英語音声を検出しました。声を選んで再生できます。`:'英語音声を検出できませんでした。';
+}
+loadVoices();
+speechSynthesis.onvoiceschanged=loadVoices;
+
+$('rate').oninput=e=>$('rateValue').textContent=`${e.target.value}×`;
+$('blankPause').oninput=e=>$('pauseValue').textContent=`${e.target.value}秒`;
+
+function next(){
+  if(stopped || idx>=script.length){
+    if(idx>=script.length){$('status').textContent='再生終了'; stopped=true;}
+    return;
+  }
+  const [role,text]=script[idx++];
+  if(role==='pause'){
+    $('current').textContent=`（${text}）空欄`; $('status').textContent='空欄で停止中';
+    timer=setTimeout(next, parseFloat($('blankPause').value)*1000); return;
+  }
+  const u=new SpeechSynthesisUtterance(text);
+  const vi=parseInt(els[role].value||0,10);
+  if(voices[vi]) u.voice=voices[vi];
+  u.rate=parseFloat($('rate').value);
+  u.pitch=1.0;
+  $('current').textContent=text;
+  $('status').textContent=`再生中 ${idx}/${script.length}`;
+  u.onend=()=>{timer=setTimeout(next,220)};
+  u.onerror=()=>{timer=setTimeout(next,250)};
+  speechSynthesis.speak(u);
+}
+
+$('play').onclick=()=>{
+  speechSynthesis.cancel(); if(timer)clearTimeout(timer); idx=0; stopped=false; next();
+};
+$('pause').onclick=()=>{speechSynthesis.pause(); $('status').textContent='一時停止中';};
+$('resume').onclick=()=>{speechSynthesis.resume(); $('status').textContent='再開しました';};
+$('stop').onclick=()=>{stopped=true; speechSynthesis.cancel(); if(timer)clearTimeout(timer); $('status').textContent='停止しました';};
+</script>
+</body>
+</html>
