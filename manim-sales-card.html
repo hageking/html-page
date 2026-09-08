@@ -1,0 +1,1111 @@
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="color-scheme" content="dark" />
+    <title>全国チェーン売上の推移 | Demo Chart</title>
+    <style>
+      :root {
+        color-scheme: dark;
+        --ink: #f5f7ff;
+        --muted: #8f9bb8;
+        --faint: #65718f;
+        --panel: rgba(16, 24, 47, 0.84);
+        --panel-strong: #111a35;
+        --line: rgba(151, 166, 207, 0.16);
+        --accent: #9b8cff;
+        --accent-soft: rgba(155, 140, 255, 0.16);
+        --cyan: #55d7ff;
+        --green: #72e6bd;
+        --orange: #ffb86d;
+        --pink: #ff82b8;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      html,
+      body {
+        min-height: 100%;
+        margin: 0;
+      }
+
+      body {
+        display: grid;
+        min-height: 100vh;
+        place-items: center;
+        padding: clamp(14px, 3vw, 32px);
+        overflow-x: hidden;
+        color: var(--ink);
+        font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont,
+          "Segoe UI", "Hiragino Kaku Gothic ProN", "Yu Gothic", sans-serif;
+        background:
+          radial-gradient(circle at 10% 0%, rgba(118, 101, 255, 0.22), transparent 34%),
+          radial-gradient(circle at 100% 100%, rgba(31, 201, 255, 0.1), transparent 35%),
+          #060a17;
+      }
+
+      button {
+        color: inherit;
+        font: inherit;
+      }
+
+      .chart-card {
+        position: relative;
+        isolation: isolate;
+        width: min(1120px, 100%);
+        overflow: hidden;
+        border: 1px solid rgba(173, 183, 226, 0.18);
+        border-radius: 30px;
+        background:
+          linear-gradient(140deg, rgba(30, 39, 75, 0.82), rgba(11, 17, 36, 0.96) 58%),
+          #0c1329;
+        box-shadow:
+          0 30px 90px rgba(0, 0, 0, 0.42),
+          inset 0 1px 0 rgba(255, 255, 255, 0.08);
+      }
+
+      .chart-card::before,
+      .chart-card::after {
+        position: absolute;
+        z-index: -1;
+        width: 240px;
+        height: 240px;
+        border-radius: 50%;
+        content: "";
+        filter: blur(16px);
+        opacity: 0.22;
+        pointer-events: none;
+      }
+
+      .chart-card::before {
+        top: -135px;
+        right: 15%;
+        background: #8d78ff;
+      }
+
+      .chart-card::after {
+        right: -120px;
+        bottom: -150px;
+        background: #29bfff;
+      }
+
+      .card-header,
+      .dashboard-grid,
+      .card-footer {
+        position: relative;
+        z-index: 1;
+      }
+
+      .card-header {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 24px;
+        padding: clamp(24px, 4vw, 42px) clamp(22px, 4vw, 48px) 26px;
+      }
+
+      .eyebrow {
+        margin: 0 0 12px;
+        color: var(--cyan);
+        font-size: 0.72rem;
+        font-weight: 800;
+        letter-spacing: 0.18em;
+        text-transform: uppercase;
+      }
+
+      h1 {
+        max-width: 620px;
+        margin: 0;
+        font-size: clamp(1.6rem, 3.8vw, 3.2rem);
+        font-weight: 780;
+        letter-spacing: -0.055em;
+        line-height: 1.06;
+      }
+
+      .subtitle {
+        max-width: 560px;
+        margin: 14px 0 0;
+        color: var(--muted);
+        font-size: clamp(0.82rem, 1.3vw, 0.96rem);
+        line-height: 1.7;
+      }
+
+      .demo-badge {
+        display: inline-flex;
+        flex: 0 0 auto;
+        align-items: center;
+        gap: 9px;
+        padding: 10px 13px;
+        border: 1px solid rgba(114, 230, 189, 0.2);
+        border-radius: 999px;
+        color: #aaf8d8;
+        background: rgba(114, 230, 189, 0.08);
+        font-size: 0.7rem;
+        font-weight: 800;
+        letter-spacing: 0.12em;
+        white-space: nowrap;
+      }
+
+      .demo-badge::before {
+        width: 7px;
+        height: 7px;
+        border-radius: 50%;
+        background: var(--green);
+        box-shadow: 0 0 14px var(--green);
+        content: "";
+      }
+
+      .dashboard-grid {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) minmax(210px, 28%);
+        gap: 16px;
+        padding: 0 clamp(16px, 3vw, 30px);
+      }
+
+      .chart-panel,
+      .kpi-panel {
+        border: 1px solid var(--line);
+        border-radius: 22px;
+        background: rgba(5, 10, 25, 0.32);
+      }
+
+      .chart-panel {
+        min-width: 0;
+        padding: clamp(16px, 2.3vw, 25px);
+      }
+
+      .panel-head {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 16px;
+        margin-bottom: 6px;
+      }
+
+      .section-label {
+        display: block;
+        margin-bottom: 4px;
+        color: var(--faint);
+        font-size: 0.72rem;
+        font-weight: 800;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+      }
+
+      .panel-title {
+        display: block;
+        font-size: clamp(1rem, 2vw, 1.26rem);
+        font-weight: 700;
+      }
+
+      .legend {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: flex-end;
+        gap: 7px 11px;
+        max-width: 380px;
+      }
+
+      .legend-item {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        color: var(--muted);
+        font-size: 0.69rem;
+        white-space: nowrap;
+      }
+
+      .legend-swatch {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        box-shadow: 0 0 9px currentColor;
+      }
+
+      .chart-wrap {
+        position: relative;
+        width: 100%;
+        margin-top: 10px;
+        aspect-ratio: 860 / 360;
+        touch-action: none;
+      }
+
+      #chart {
+        display: block;
+        width: 100%;
+        height: 100%;
+        overflow: visible;
+        cursor: crosshair;
+      }
+
+      .axis-label {
+        fill: var(--faint);
+        font-size: 12px;
+        font-weight: 600;
+      }
+
+      .grid-line {
+        stroke: var(--line);
+        stroke-width: 1;
+        vector-effect: non-scaling-stroke;
+      }
+
+      .series-line {
+        fill: none;
+        stroke-linecap: round;
+        stroke-linejoin: round;
+        stroke-width: 3.5;
+        vector-effect: non-scaling-stroke;
+      }
+
+      .series-area {
+        stroke: none;
+      }
+
+      .data-point {
+        stroke: #0a1022;
+        stroke-width: 3;
+        vector-effect: non-scaling-stroke;
+      }
+
+      .hover-line {
+        stroke: rgba(245, 247, 255, 0.4);
+        stroke-dasharray: 4 6;
+        stroke-width: 1;
+        vector-effect: non-scaling-stroke;
+      }
+
+      .chart-tooltip {
+        position: absolute;
+        z-index: 5;
+        min-width: 150px;
+        padding: 11px 12px;
+        border: 1px solid rgba(202, 211, 255, 0.22);
+        border-radius: 13px;
+        background: rgba(10, 16, 37, 0.94);
+        box-shadow: 0 12px 35px rgba(0, 0, 0, 0.32);
+        opacity: 0;
+        pointer-events: none;
+        transform: translate(-50%, calc(-100% - 15px));
+        transition: opacity 140ms ease;
+        backdrop-filter: blur(12px);
+      }
+
+      .chart-tooltip.is-visible {
+        opacity: 1;
+      }
+
+      .tooltip-month {
+        display: block;
+        margin-bottom: 7px;
+        color: var(--muted);
+        font-size: 0.7rem;
+        font-weight: 700;
+      }
+
+      .tooltip-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 18px;
+        margin-top: 5px;
+        font-size: 0.74rem;
+      }
+
+      .tooltip-name {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        color: #d9def4;
+      }
+
+      .tooltip-dot {
+        width: 6px;
+        height: 6px;
+        border-radius: 50%;
+      }
+
+      .tooltip-value {
+        color: var(--ink);
+        font-weight: 800;
+      }
+
+      .chart-note {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        margin-top: 2px;
+        color: var(--faint);
+        font-size: 0.7rem;
+      }
+
+      .chart-note strong {
+        color: #c9d0e9;
+        font-weight: 700;
+      }
+
+      .kpi-panel {
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        padding: clamp(17px, 2.3vw, 25px);
+      }
+
+      .kpi-heading {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 8px;
+        color: var(--muted);
+        font-size: 0.72rem;
+        font-weight: 800;
+        letter-spacing: 0.11em;
+        text-transform: uppercase;
+      }
+
+      .sparkle {
+        color: var(--accent);
+        font-size: 1rem;
+      }
+
+      .kpi-block {
+        margin-top: 23px;
+      }
+
+      .kpi-label {
+        color: var(--muted);
+        font-size: 0.75rem;
+      }
+
+      .kpi-value {
+        display: block;
+        margin-top: 5px;
+        color: var(--ink);
+        font-size: clamp(1.55rem, 3vw, 2.25rem);
+        font-weight: 780;
+        letter-spacing: -0.055em;
+        line-height: 1;
+      }
+
+      .kpi-meta {
+        display: flex;
+        align-items: center;
+        gap: 7px;
+        margin-top: 8px;
+        color: var(--green);
+        font-size: 0.72rem;
+        font-weight: 700;
+      }
+
+      .kpi-divider {
+        height: 1px;
+        margin: 21px 0 0;
+        background: var(--line);
+      }
+
+      .leader {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        margin-top: 17px;
+      }
+
+      .leader-copy {
+        min-width: 0;
+      }
+
+      .leader-name {
+        display: block;
+        overflow: hidden;
+        color: #dce2f6;
+        font-size: 0.88rem;
+        font-weight: 750;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+
+      .leader-label {
+        display: block;
+        margin-top: 4px;
+        color: var(--muted);
+        font-size: 0.7rem;
+      }
+
+      .leader-value {
+        color: var(--cyan);
+        font-size: 0.93rem;
+        font-weight: 800;
+      }
+
+      .mini-bars {
+        display: grid;
+        align-items: end;
+        grid-template-columns: repeat(12, 1fr);
+        gap: 3px;
+        height: 56px;
+        margin-top: 22px;
+        padding-top: 12px;
+        border-top: 1px solid var(--line);
+      }
+
+      .mini-bar {
+        min-height: 5px;
+        border-radius: 4px 4px 2px 2px;
+        background: linear-gradient(180deg, var(--accent), rgba(155, 140, 255, 0.16));
+        transform-origin: bottom;
+        animation: rise-in 900ms cubic-bezier(0.2, 0.9, 0.25, 1) both;
+      }
+
+      .card-footer {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 18px;
+        padding: 18px clamp(22px, 4vw, 48px) 24px;
+      }
+
+      .range-tabs {
+        display: inline-flex;
+        align-items: center;
+        gap: 3px;
+        padding: 4px;
+        border: 1px solid var(--line);
+        border-radius: 12px;
+        background: rgba(4, 9, 22, 0.42);
+      }
+
+      .range-button,
+      .action-button {
+        border: 0;
+        border-radius: 8px;
+        cursor: pointer;
+        transition: color 180ms ease, background 180ms ease, transform 180ms ease;
+      }
+
+      .range-button {
+        padding: 8px 11px;
+        color: var(--muted);
+        background: transparent;
+        font-size: 0.75rem;
+        font-weight: 750;
+      }
+
+      .range-button:hover,
+      .range-button:focus-visible {
+        color: var(--ink);
+      }
+
+      .range-button.is-active {
+        color: var(--ink);
+        background: var(--accent-soft);
+        box-shadow: inset 0 0 0 1px rgba(155, 140, 255, 0.18);
+      }
+
+      .actions {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+
+      .action-button {
+        display: inline-flex;
+        align-items: center;
+        gap: 7px;
+        padding: 9px 12px;
+        border: 1px solid var(--line);
+        color: #cbd4ef;
+        background: rgba(11, 18, 40, 0.52);
+        font-size: 0.74rem;
+        font-weight: 750;
+      }
+
+      .action-button:hover,
+      .action-button:focus-visible {
+        border-color: rgba(155, 140, 255, 0.5);
+        color: var(--ink);
+        background: rgba(155, 140, 255, 0.13);
+        transform: translateY(-1px);
+      }
+
+      .action-button:focus-visible,
+      .range-button:focus-visible {
+        outline: 2px solid var(--cyan);
+        outline-offset: 2px;
+      }
+
+      .action-icon {
+        color: var(--accent);
+        font-size: 0.9rem;
+      }
+
+      @keyframes rise-in {
+        from {
+          opacity: 0;
+          transform: scaleY(0.2);
+        }
+        to {
+          opacity: 1;
+          transform: scaleY(1);
+        }
+      }
+
+      @media (max-width: 760px) {
+        .chart-card {
+          border-radius: 22px;
+        }
+
+        .card-header {
+          display: block;
+        }
+
+        .demo-badge {
+          margin-top: 19px;
+        }
+
+        .dashboard-grid {
+          grid-template-columns: 1fr;
+        }
+
+        .kpi-panel {
+          display: grid;
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+          gap: 15px 20px;
+        }
+
+        .kpi-heading {
+          grid-column: 1 / -1;
+        }
+
+        .kpi-block {
+          margin-top: 0;
+        }
+
+        .kpi-divider,
+        .leader,
+        .mini-bars {
+          margin-top: 0;
+        }
+
+        .kpi-divider {
+          display: none;
+        }
+
+        .leader {
+          align-self: end;
+        }
+
+        .mini-bars {
+          grid-column: 1 / -1;
+        }
+      }
+
+      @media (max-width: 520px) {
+        body {
+          padding: 9px;
+        }
+
+        .chart-panel {
+          padding: 14px 11px;
+        }
+
+        .panel-head {
+          display: block;
+        }
+
+        .legend {
+          justify-content: flex-start;
+          margin-top: 12px;
+        }
+
+        .chart-note {
+          display: block;
+          line-height: 1.6;
+        }
+
+        .card-footer {
+          align-items: stretch;
+          flex-direction: column;
+          padding-top: 14px;
+        }
+
+        .range-tabs,
+        .actions {
+          justify-content: center;
+        }
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        *,
+        *::before,
+        *::after {
+          scroll-behavior: auto !important;
+          animation-duration: 0.01ms !important;
+          animation-iteration-count: 1 !important;
+          transition-duration: 0.01ms !important;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main class="chart-card" aria-labelledby="card-title">
+      <header class="card-header">
+        <div>
+          <p class="eyebrow">National chain index · 2026 demo</p>
+          <h1 id="card-title">全国チェーン売上の推移</h1>
+          <p class="subtitle">
+            4つの架空ブランドを対象にした月次売上のサンプルです。線が伸びる動きで、季節変動とブランド間の差を直感的に比較できます。
+          </p>
+        </div>
+        <span class="demo-badge">DEMO DATA</span>
+      </header>
+
+      <section class="dashboard-grid" aria-label="売上グラフと主要指標">
+        <section class="chart-panel" aria-labelledby="chart-title">
+          <div class="panel-head">
+            <div>
+              <span class="section-label">Monthly revenue</span>
+              <strong class="panel-title" id="chart-title">売上高（10億円）</strong>
+            </div>
+            <div class="legend" id="legend" aria-label="ブランド凡例"></div>
+          </div>
+
+          <div class="chart-wrap" id="chart-wrap">
+            <svg
+              id="chart"
+              viewBox="0 0 860 360"
+              role="img"
+              aria-label="架空の全国チェーン4ブランドの月次売上推移"
+              preserveAspectRatio="none"
+            >
+              <defs>
+                <linearGradient id="area-purple" x1="0" x2="0" y1="0" y2="1">
+                  <stop offset="0%" stop-color="#9b8cff" stop-opacity="0.25" />
+                  <stop offset="100%" stop-color="#9b8cff" stop-opacity="0" />
+                </linearGradient>
+                <linearGradient id="area-cyan" x1="0" x2="0" y1="0" y2="1">
+                  <stop offset="0%" stop-color="#55d7ff" stop-opacity="0.18" />
+                  <stop offset="100%" stop-color="#55d7ff" stop-opacity="0" />
+                </linearGradient>
+                <filter id="soft-glow" x="-25%" y="-25%" width="150%" height="150%">
+                  <feGaussianBlur stdDeviation="3.5" result="blur" />
+                  <feMerge>
+                    <feMergeNode in="blur" />
+                    <feMergeNode in="SourceGraphic" />
+                  </feMerge>
+                </filter>
+              </defs>
+              <g id="grid-lines" aria-hidden="true"></g>
+              <g id="axis-labels" aria-hidden="true"></g>
+              <g id="area-layer" aria-hidden="true"></g>
+              <g id="series-layer" aria-hidden="true"></g>
+              <g id="points-layer" aria-hidden="true"></g>
+              <line id="hover-line" class="hover-line" x1="0" y1="22" x2="0" y2="304" opacity="0" />
+            </svg>
+            <div class="chart-tooltip" id="chart-tooltip" role="status" aria-live="polite"></div>
+          </div>
+
+          <div class="chart-note">
+            <span><strong>Hover</strong> で月別の値を表示</span>
+            <span>単位：¥ billion</span>
+          </div>
+        </section>
+
+        <aside class="kpi-panel" aria-label="主要指標">
+          <div class="kpi-heading">
+            <span>Snapshot</span>
+            <span class="sparkle" aria-hidden="true">✦</span>
+          </div>
+
+          <div class="kpi-block">
+            <span class="kpi-label" id="latest-label">最新月の合計</span>
+            <strong class="kpi-value" id="latest-value">¥0.0B</strong>
+            <span class="kpi-meta" id="growth-value">↗ 0.0% 前年同月比</span>
+          </div>
+
+          <div class="kpi-block">
+            <span class="kpi-label">期間平均</span>
+            <strong class="kpi-value" id="average-value">¥0.0B</strong>
+            <span class="kpi-meta" style="color: var(--muted)">選択期間の平均値</span>
+          </div>
+
+          <div class="kpi-divider"></div>
+
+          <div class="leader">
+            <div class="leader-copy">
+              <span class="leader-name" id="leader-name">---</span>
+              <span class="leader-label">最新月のトップ</span>
+            </div>
+            <strong class="leader-value" id="leader-value">¥0.0B</strong>
+          </div>
+
+          <div class="mini-bars" id="mini-bars" aria-hidden="true"></div>
+        </aside>
+      </section>
+
+      <footer class="card-footer">
+        <div class="range-tabs" aria-label="表示期間">
+          <button class="range-button" type="button" data-range="3">3か月</button>
+          <button class="range-button" type="button" data-range="6">6か月</button>
+          <button class="range-button is-active" type="button" data-range="12">12か月</button>
+        </div>
+        <div class="actions">
+          <button class="action-button" id="play-button" type="button">
+            <span class="action-icon" aria-hidden="true">▶</span>
+            <span>再生</span>
+          </button>
+          <button class="action-button" id="reset-button" type="button">
+            <span class="action-icon" aria-hidden="true">↺</span>
+            <span>リセット</span>
+          </button>
+        </div>
+      </footer>
+    </main>
+
+    <script>
+      const demoData = {
+        labels: ["4月", "5月", "6月", "7月", "8月", "9月", "10月", "11月", "12月", "1月", "2月", "3月"],
+        series: [
+          {
+            name: "すし波",
+            color: "#9b8cff",
+            area: "url(#area-purple)",
+            values: [31, 34, 33, 38, 43, 42, 47, 50, 53, 52, 58, 62]
+          },
+          {
+            name: "バーガー軒",
+            color: "#55d7ff",
+            area: "url(#area-cyan)",
+            values: [43, 45, 42, 44, 47, 51, 50, 54, 57, 59, 61, 66]
+          },
+          {
+            name: "珈琲舎",
+            color: "#ffb86d",
+            area: null,
+            values: [22, 24, 26, 25, 29, 31, 34, 35, 39, 40, 43, 45]
+          },
+          {
+            name: "ファミリー亭",
+            color: "#ff82b8",
+            area: null,
+            values: [28, 30, 29, 32, 34, 36, 39, 38, 42, 45, 47, 50]
+          }
+        ]
+      };
+
+      const VIEW_WIDTH = 860;
+      const PLOT = { left: 52, right: 14, top: 22, bottom: 56 };
+      const PLOT_WIDTH = VIEW_WIDTH - PLOT.left - PLOT.right;
+      const PLOT_HEIGHT = 304 - PLOT.top;
+      const Y_MAX = 80;
+      const state = {
+        range: 12,
+        progress: 1,
+        focusIndex: null,
+        animationFrame: null,
+        isPlaying: false
+      };
+
+      const chart = document.querySelector("#chart");
+      const chartWrap = document.querySelector("#chart-wrap");
+      const gridLines = document.querySelector("#grid-lines");
+      const axisLabels = document.querySelector("#axis-labels");
+      const areaLayer = document.querySelector("#area-layer");
+      const seriesLayer = document.querySelector("#series-layer");
+      const pointsLayer = document.querySelector("#points-layer");
+      const hoverLine = document.querySelector("#hover-line");
+      const tooltip = document.querySelector("#chart-tooltip");
+      const rangeButtons = [...document.querySelectorAll("[data-range]")];
+      const playButton = document.querySelector("#play-button");
+      const resetButton = document.querySelector("#reset-button");
+
+      function svgElement(tag, attributes = {}) {
+        const node = document.createElementNS("http://www.w3.org/2000/svg", tag);
+        Object.entries(attributes).forEach(([key, value]) => node.setAttribute(key, value));
+        return node;
+      }
+
+      function visibleData() {
+        const start = demoData.labels.length - state.range;
+        return {
+          labels: demoData.labels.slice(start),
+          series: demoData.series.map((item) => ({ ...item, values: item.values.slice(start) }))
+        };
+      }
+
+      function xPosition(index, count) {
+        if (count <= 1) return PLOT.left + PLOT_WIDTH / 2;
+        return PLOT.left + (index / (count - 1)) * PLOT_WIDTH;
+      }
+
+      function yPosition(value) {
+        return PLOT.top + PLOT_HEIGHT - (value / Y_MAX) * PLOT_HEIGHT;
+      }
+
+      function linePath(values, count) {
+        return values
+          .map((value, index) => `${index === 0 ? "M" : "L"} ${xPosition(index, count).toFixed(2)} ${yPosition(value).toFixed(2)}`)
+          .join(" ");
+      }
+
+      function areaPath(values, count) {
+        const firstX = xPosition(0, count);
+        const lastX = xPosition(count - 1, count);
+        return `${linePath(values, count)} L ${lastX.toFixed(2)} 304 L ${firstX.toFixed(2)} 304 Z`;
+      }
+
+      function renderAxes(labels) {
+        gridLines.replaceChildren();
+        axisLabels.replaceChildren();
+        const ticks = [0, 20, 40, 60, 80];
+
+        ticks.forEach((tick) => {
+          const y = yPosition(tick);
+          gridLines.appendChild(svgElement("line", {
+            class: "grid-line",
+            x1: PLOT.left,
+            y1: y,
+            x2: VIEW_WIDTH - PLOT.right,
+            y2: y
+          }));
+          const label = svgElement("text", {
+            class: "axis-label",
+            x: PLOT.left - 12,
+            y: y + 4,
+            "text-anchor": "end"
+          });
+          label.textContent = tick;
+          axisLabels.appendChild(label);
+        });
+
+        labels.forEach((labelText, index) => {
+          const label = svgElement("text", {
+            class: "axis-label",
+            x: xPosition(index, labels.length),
+            y: 333,
+            "text-anchor": "middle"
+          });
+          label.textContent = labelText;
+          axisLabels.appendChild(label);
+        });
+      }
+
+      function renderLegend(series) {
+        const legend = document.querySelector("#legend");
+        legend.replaceChildren();
+        series.forEach((item) => {
+          const entry = document.createElement("span");
+          entry.className = "legend-item";
+          entry.innerHTML = `<span class="legend-swatch" style="color: ${item.color}; background: ${item.color}"></span>${item.name}`;
+          legend.appendChild(entry);
+        });
+      }
+
+      function renderChart(progress = state.progress) {
+        const data = visibleData();
+        const count = data.labels.length;
+        state.progress = Math.max(0, Math.min(1, progress));
+        renderAxes(data.labels);
+        renderLegend(data.series);
+        areaLayer.replaceChildren();
+        seriesLayer.replaceChildren();
+        pointsLayer.replaceChildren();
+
+        data.series.forEach((item, seriesIndex) => {
+          if (item.area) {
+            const area = svgElement("path", {
+              class: "series-area",
+              d: areaPath(item.values, count),
+              fill: item.area,
+              opacity: state.progress * 0.9
+            });
+            areaLayer.appendChild(area);
+          }
+
+          const path = svgElement("path", {
+            class: "series-line",
+            d: linePath(item.values, count),
+            stroke: item.color,
+            filter: seriesIndex < 2 ? "url(#soft-glow)" : "none",
+            pathLength: "1",
+            "stroke-dasharray": "1",
+            "stroke-dashoffset": 1 - state.progress
+          });
+          seriesLayer.appendChild(path);
+
+          item.values.forEach((value, index) => {
+            const pointProgress = Math.max(0, Math.min(1, state.progress * count - index));
+            const point = svgElement("circle", {
+              class: "data-point",
+              cx: xPosition(index, count),
+              cy: yPosition(value),
+              r: state.focusIndex === index ? 5.5 : 3.5,
+              fill: item.color,
+              opacity: pointProgress,
+              "data-series": item.name,
+              "data-index": index
+            });
+            pointsLayer.appendChild(point);
+          });
+        });
+
+        if (state.focusIndex !== null) {
+          updateHover(state.focusIndex);
+        }
+      }
+
+      function formatValue(value) {
+        return `¥${value.toFixed(1)}B`;
+      }
+
+      function updateSnapshot() {
+        const data = visibleData();
+        const firstTotal = data.series.reduce((sum, item) => sum + item.values[0], 0);
+        const latestTotal = data.series.reduce((sum, item) => sum + item.values.at(-1), 0);
+        const averageTotal = data.series.reduce((sum, item) => {
+          return sum + item.values.reduce((inner, value) => inner + value, 0) / item.values.length;
+        }, 0);
+        const growth = ((latestTotal - firstTotal) / firstTotal) * 100;
+        const latestLeader = [...data.series].sort((a, b) => b.values.at(-1) - a.values.at(-1))[0];
+
+        document.querySelector("#latest-label").textContent = `${data.labels.at(-1)}の合計`;
+        document.querySelector("#latest-value").textContent = formatValue(latestTotal);
+        document.querySelector("#growth-value").textContent = `↗ ${growth.toFixed(1)}% 期間の伸び`;
+        document.querySelector("#average-value").textContent = formatValue(averageTotal);
+        document.querySelector("#leader-name").textContent = latestLeader.name;
+        document.querySelector("#leader-value").textContent = formatValue(latestLeader.values.at(-1));
+
+        const miniBars = document.querySelector("#mini-bars");
+        miniBars.replaceChildren();
+        const totals = data.labels.map((_, index) => data.series.reduce((sum, item) => sum + item.values[index], 0));
+        const maxTotal = Math.max(...totals);
+        totals.forEach((total, index) => {
+          const bar = document.createElement("span");
+          bar.className = "mini-bar";
+          bar.style.height = `${Math.max(12, (total / maxTotal) * 100)}%`;
+          bar.style.animationDelay = `${index * 35}ms`;
+          miniBars.appendChild(bar);
+        });
+      }
+
+      function positionTooltip(index) {
+        const data = visibleData();
+        const x = xPosition(index, data.labels.length);
+        const left = (x / VIEW_WIDTH) * chartWrap.clientWidth;
+        const top = (yPosition(Math.max(...data.series.map((item) => item.values[index]))) / 360) * chartWrap.clientHeight;
+        const margin = 82;
+        tooltip.style.left = `${Math.max(margin, Math.min(chartWrap.clientWidth - margin, left))}px`;
+        tooltip.style.top = `${Math.max(45, top)}px`;
+      }
+
+      function updateHover(index) {
+        const data = visibleData();
+        if (index < 0 || index >= data.labels.length) return;
+        state.focusIndex = index;
+        hoverLine.setAttribute("x1", xPosition(index, data.labels.length));
+        hoverLine.setAttribute("x2", xPosition(index, data.labels.length));
+        hoverLine.setAttribute("opacity", "1");
+        tooltip.innerHTML = `<span class="tooltip-month">${data.labels[index]}</span>${data.series
+          .map((item) => `<div class="tooltip-row"><span class="tooltip-name"><span class="tooltip-dot" style="background:${item.color}"></span>${item.name}</span><strong class="tooltip-value">${formatValue(item.values[index])}</strong></div>`)
+          .join("")}`;
+        positionTooltip(index);
+        tooltip.classList.add("is-visible");
+      }
+
+      function hideTooltip() {
+        state.focusIndex = null;
+        hoverLine.setAttribute("opacity", "0");
+        tooltip.classList.remove("is-visible");
+        renderChart(state.progress);
+      }
+
+      function indexFromPointer(event) {
+        const rect = chart.getBoundingClientRect();
+        const normalizedX = (event.clientX - rect.left) / rect.width;
+        const data = visibleData();
+        return Math.max(0, Math.min(data.labels.length - 1, Math.round(normalizedX * (data.labels.length - 1))));
+      }
+
+      function animateChart() {
+        if (state.animationFrame) cancelAnimationFrame(state.animationFrame);
+        state.isPlaying = true;
+        state.focusIndex = null;
+        hoverLine.setAttribute("opacity", "0");
+        tooltip.classList.remove("is-visible");
+        playButton.querySelector(".action-icon").textContent = "Ⅱ";
+        playButton.querySelector("span:last-child").textContent = "再生中";
+        const start = performance.now();
+        const duration = 1800;
+
+        function frame(now) {
+          const progress = Math.min(1, (now - start) / duration);
+          renderChart(progress);
+          if (progress < 1) {
+            state.animationFrame = requestAnimationFrame(frame);
+          } else {
+            state.animationFrame = null;
+            state.isPlaying = false;
+            playButton.querySelector(".action-icon").textContent = "▶";
+            playButton.querySelector("span:last-child").textContent = "再生";
+          }
+        }
+
+        state.animationFrame = requestAnimationFrame(frame);
+      }
+
+      function setRange(range, shouldAnimate = true) {
+        state.range = range;
+        state.focusIndex = null;
+        rangeButtons.forEach((button) => button.classList.toggle("is-active", Number(button.dataset.range) === range));
+        updateSnapshot();
+        renderChart(shouldAnimate ? 0 : 1);
+        if (shouldAnimate) animateChart();
+      }
+
+      chart.addEventListener("pointermove", (event) => updateHover(indexFromPointer(event)));
+      chart.addEventListener("pointerleave", hideTooltip);
+      chart.addEventListener("pointercancel", hideTooltip);
+      window.addEventListener("resize", () => {
+        if (state.focusIndex !== null) updateHover(state.focusIndex);
+      });
+
+      rangeButtons.forEach((button) => {
+        button.addEventListener("click", () => setRange(Number(button.dataset.range)));
+      });
+
+      playButton.addEventListener("click", () => {
+        if (state.isPlaying) {
+          cancelAnimationFrame(state.animationFrame);
+          state.animationFrame = null;
+          state.isPlaying = false;
+          playButton.querySelector(".action-icon").textContent = "▶";
+          playButton.querySelector("span:last-child").textContent = "再生";
+        } else {
+          animateChart();
+        }
+      });
+
+      resetButton.addEventListener("click", () => {
+        if (state.animationFrame) cancelAnimationFrame(state.animationFrame);
+        state.animationFrame = null;
+        state.isPlaying = false;
+        state.focusIndex = null;
+        playButton.querySelector(".action-icon").textContent = "▶";
+        playButton.querySelector("span:last-child").textContent = "再生";
+        setRange(12, false);
+        renderChart(0);
+        window.setTimeout(() => animateChart(), 90);
+      });
+
+      updateSnapshot();
+      renderChart(1);
+      if (!window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+        window.setTimeout(() => animateChart(), 350);
+      }
+    </script>
+  </body>
+</html>
