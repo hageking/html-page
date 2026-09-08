@@ -165,7 +165,7 @@ const GraphDFSScene=function(s){
 
   s.setup=function(){
     setup2D(s);
-    s.canvas.parent("canvas-wrap");
+    document.getElementById("canvas-wrap").appendChild(s.canvas);
     s.g=new Graph_DFS_Demo(s,{
       V:G_DFS.V,E:G_DFS.E,font:tnr,
       start:t.start,begin:t.trace,time:t.txt,
