@@ -1,0 +1,112 @@
+name: DFS demo E2E
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'dfs-manim-demo.html'
+      - '.github/workflows/dfs-e2e.yml'
+  workflow_dispatch:
+
+jobs:
+  browser-test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install Playwright
+        run: |
+          npm init -y >/dev/null 2>&1
+          npm install playwright@1.55.0 >/dev/null 2>&1
+          npx playwright install chromium --with-deps
+
+      - name: Test published DFS page in Chromium
+        env:
+          TEST_URL: https://hageking.github.io/html-page/dfs-manim-demo.html
+        run: |
+          cat > /tmp/test-dfs.mjs <<'EOF'
+          import { chromium } from 'playwright';
+
+          const browser = await chromium.launch({headless:true});
+          const page = await browser.newPage({viewport:{width:1200,height:675}});
+          const errors = [];
+          const consoleMessages = [];
+          page.on('pageerror', e => errors.push(String(e)));
+          page.on('console', m => {
+            consoleMessages.push(`${m.type()}: ${m.text()}`);
+            if (m.type() === 'error') errors.push(`console: ${m.text()}`);
+          });
+
+          const base = process.env.TEST_URL;
+          let loaded = false;
+          for (let attempt = 1; attempt <= 12; attempt++) {
+            errors.length = 0;
+            try {
+              const res = await page.goto(`${base}?e2e=${Date.now()}-${attempt}`, {waitUntil:'networkidle', timeout:30000});
+              console.log(`attempt=${attempt} http=${res?.status()}`);
+              await page.waitForTimeout(2500);
+              if (await page.locator('canvas').count()) { loaded = true; break; }
+            } catch (e) {
+              console.log(`attempt=${attempt} navigation_error=${e}`);
+            }
+            await page.waitForTimeout(5000);
+          }
+
+          if (!loaded) {
+            console.log('console messages:', consoleMessages.join('\n'));
+            throw new Error('No canvas was created on the published page');
+          }
+
+          const result = await page.evaluate(() => {
+            const canvas = document.querySelector('canvas');
+            const ctx = canvas.getContext('2d');
+            const w = canvas.width, h = canvas.height;
+            const data = ctx.getImageData(0,0,w,h).data;
+            let nonBlack = 0;
+            let bright = 0;
+            for (let y=0; y<h; y+=4) {
+              for (let x=0; x<w; x+=4) {
+                const i=(y*w+x)*4;
+                const r=data[i], g=data[i+1], b=data[i+2], a=data[i+3];
+                if (a && (r>8 || g>8 || b>8)) nonBlack++;
+                if (r+g+b>180) bright++;
+              }
+            }
+            return {
+              width:w,
+              height:h,
+              nonBlack,
+              bright,
+              graphU: typeof Graph_U,
+              tracer: typeof Tracer,
+              p5Type: typeof p5,
+              bodyChildren: document.body.children.length
+            };
+          });
+
+          console.log('render result:', JSON.stringify(result));
+          console.log('console messages:', consoleMessages.join('\n'));
+          await page.screenshot({path:'dfs-e2e.png', fullPage:true});
+          await browser.close();
+
+          if (errors.length) throw new Error(`Browser errors:\n${errors.join('\n')}`);
+          if (result.graphU !== 'function' || result.tracer !== 'function' || result.p5Type !== 'function') {
+            throw new Error(`Manim.js classes not loaded: ${JSON.stringify(result)}`);
+          }
+          if (result.width < 1000 || result.height < 500) throw new Error(`Unexpected canvas size: ${result.width}x${result.height}`);
+          if (result.nonBlack < 500 || result.bright < 100) throw new Error(`Canvas appears blank/near-black: ${JSON.stringify(result)}`);
+          EOF
+          node /tmp/test-dfs.mjs
+
+      - name: Upload screenshot
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: dfs-e2e-screenshot
+          path: dfs-e2e.png
+          if-no-files-found: ignore
