@@ -19,11 +19,20 @@ body{display:flex;align-items:center;justify-content:center}
 <script src="https://cdn.jsdelivr.net/gh/JazonJiao/Manim.js@master/src/utils.js"></script>
 <script src="https://cdn.jsdelivr.net/gh/JazonJiao/Manim.js@master/src/brain.js"></script>
 <script src="https://cdn.jsdelivr.net/gh/JazonJiao/Manim.js@master/Graph%20Algorithms/graph.js"></script>
+
+<!-- The live 2019 BFS demo uses the legacy 1200×675 / 30fps scene geometry. -->
+<script>
+canvasWidth = 1200;
+canvasHeight = 675;
+cvw = 1200;
+cvh = 675;
+fr = 30;
+</script>
 </head>
 <body>
 <div id="canvas-wrap"></div>
 <script>
-// DFS — built with the same Manim.js graph stack as Jazon Jiao's graph-algorithm demos.
+// DFS implemented on the same Manim.js Graph_U/Tracer stack as Jazon Jiao's graph demos.
 
 let EU_DFS = [
   [0,1],[0,2],[0,3],[0,4],[0,6],
@@ -87,7 +96,6 @@ class Graph_DFS_Demo extends Graph_U {
     let hlc=Orange;
     let nhr=12;
     let ehr=14;
-
     let node=this.stack[this.top];
 
     while(this.aim[this.top] < this.n){
@@ -171,6 +179,7 @@ const GraphDFSScene=function(s){
       start:t.start,begin:t.trace,time:t.txt,
       color_e:[7,97,7]
     });
+    window._dfsGraphReady=true;
   };
 
   s.draw=function(){
