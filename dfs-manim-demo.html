@@ -1,392 +1,185 @@
-<!doctype html>
-<html lang="ja">
+<!DOCTYPE html>
+<html lang="en">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>DFS Visualizer · Manim.js style</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Depth-First Search · Manim.js</title>
 <style>
-  :root{
-    --bg:#000;
-    --panel:#0b0f14;
-    --text:#f5f7fb;
-    --muted:#a8b0bd;
-    --cyan:#58c4dd;
-    --yellow:#f7e32f;
-    --orange:#f7891b;
-    --red:#f74d61;
-    --green:#4dd94d;
-  }
-  *{box-sizing:border-box}
-  html,body{margin:0;width:100%;min-height:100%;background:#000;color:var(--text);
-    font-family:Inter,ui-sans-serif,-apple-system,BlinkMacSystemFont,"Segoe UI","Noto Sans JP",sans-serif}
-  body{display:grid;place-items:center;padding:12px}
-  .card{
-    width:min(1200px,100%);
-    border:1px solid rgba(255,255,255,.1);
-    border-radius:18px;
-    overflow:hidden;
-    background:#000;
-    box-shadow:0 24px 70px rgba(0,0,0,.45);
-  }
-  .topbar{
-    height:54px;display:flex;align-items:center;justify-content:space-between;
-    padding:0 16px;border-bottom:1px solid rgba(255,255,255,.08);
-    background:linear-gradient(180deg,#0d1219,#090d12);
-  }
-  .brand{display:flex;align-items:baseline;gap:10px}
-  .brand b{font-size:16px;letter-spacing:.01em}
-  .brand span{font-size:11px;color:var(--muted);letter-spacing:.08em;text-transform:uppercase}
-  .controls{display:flex;gap:8px;align-items:center}
-  button{
-    appearance:none;border:1px solid rgba(255,255,255,.12);background:#121923;color:#eef3f8;
-    border-radius:9px;padding:7px 11px;font:inherit;font-size:12px;cursor:pointer
-  }
-  button:hover{background:#182230}
-  .speed{display:flex;gap:4px}
-  .speed button.active{border-color:rgba(88,196,221,.65);color:#8ee8f8;background:rgba(88,196,221,.1)}
-  #stage{width:100%;aspect-ratio:16/9;position:relative;background:#000}
-  #canvas-holder{position:absolute;inset:0}
-  #canvas-holder canvas{width:100%!important;height:100%!important;display:block}
-  .caption{
-    min-height:48px;padding:10px 16px 11px;border-top:1px solid rgba(255,255,255,.08);
-    display:flex;align-items:center;gap:10px;background:#090d12;color:#d9e0e8;font-size:13px
-  }
-  .caption i{width:8px;height:8px;border-radius:50%;background:var(--orange);box-shadow:0 0 12px rgba(247,137,27,.65);flex:none}
-  .caption small{color:var(--muted)}
-  @media(max-width:700px){
-    body{padding:0}.card{border-radius:0;border-left:0;border-right:0}
-    .brand span{display:none}.controls{gap:4px}button{padding:6px 8px}
-    .speed button:nth-child(2){display:none}
-  }
+html,body{margin:0;width:100%;height:100%;background:#000;overflow:hidden}
+body{display:flex;align-items:center;justify-content:center}
+#canvas-wrap{width:min(100vw,177.7778vh);aspect-ratio:16/9}
+#canvas-wrap canvas{width:100%!important;height:100%!important;display:block}
 </style>
-</head>
-<body>
-<main class="card">
-  <div class="topbar">
-    <div class="brand"><b>Depth-First Search</b><span>DFS visual explanation</span></div>
-    <div class="controls">
-      <button id="playBtn">Pause</button>
-      <button id="stepBtn">Step</button>
-      <button id="replayBtn">Replay</button>
-      <div class="speed">
-        <button data-speed=".65">0.7×</button>
-        <button class="active" data-speed="1">1×</button>
-        <button data-speed="1.6">1.6×</button>
-      </div>
-    </div>
-  </div>
-
-  <div id="stage"><div id="canvas-holder"></div></div>
-
-  <div class="caption">
-    <i></i><div><span id="captionText">DFSは、行けるところまで深く進み、行き止まりになったら1つ前へ戻ります。</span>
-    <small>　オレンジ = 現在位置 / 黄 = 訪問済み / 赤 = 調べたが既訪問</small></div>
-  </div>
-</main>
 
 <script src="https://cdn.jsdelivr.net/npm/p5@1.11.10/lib/p5.min.js"></script>
-<script src="https://cdn.jsdelivr.net/gh/JazonJiao/Manim.js@master/Manim.js"></script>
+<script src="https://cdn.jsdelivr.net/gh/JazonJiao/Manim.js@master/src/graphics.js"></script>
+<script src="https://cdn.jsdelivr.net/gh/JazonJiao/Manim.js@master/src/globals.js"></script>
+<script src="https://cdn.jsdelivr.net/gh/JazonJiao/Manim.js@master/src/text.js"></script>
+<script src="https://cdn.jsdelivr.net/gh/JazonJiao/Manim.js@master/src/timer.js"></script>
+<script src="https://cdn.jsdelivr.net/gh/JazonJiao/Manim.js@master/src/utils.js"></script>
+<script src="https://cdn.jsdelivr.net/gh/JazonJiao/Manim.js@master/src/brain.js"></script>
+<script src="https://cdn.jsdelivr.net/gh/JazonJiao/Manim.js@master/Graph%20Algorithms/graph.js"></script>
+</head>
+<body>
+<div id="canvas-wrap"></div>
 <script>
-(() => {
-  const W = 1200, H = 675;
+// DFS — built with the same Manim.js graph stack as Jazon Jiao's graph-algorithm demos.
 
-  const nodes = [
-    {id:"A",x:130,y:125},
-    {id:"B",x:295,y:115},
-    {id:"C",x:295,y:315},
-    {id:"D",x:470,y:70},
-    {id:"E",x:470,y:185},
-    {id:"F",x:470,y:315},
-    {id:"G",x:470,y:445},
-    {id:"H",x:635,y:70},
-    {id:"I",x:635,y:365}
-  ];
-  const edges = [
-    ["A","B"],["A","C"],
-    ["B","D"],["B","E"],
-    ["D","H"],
-    ["E","F"],["E","C"],
-    ["F","C"],["F","I"],
-    ["C","G"],
-    ["G","I"]
-  ];
+let EU_DFS = [
+  [0,1],[0,2],[0,3],[0,4],[0,6],
+  [1,2],[1,5],[1,6],[1,8,54],
+  [2,3],[2,5],[2,6],[2,7],[2,8],
+  [3,4],[3,5],[3,6],[3,7],[3,9],
+  [4,6],[4,7],[4,9,-54],
+  [5,6],[5,8],[5,9],[5,10],
+  [6,7],[6,8],[6,9],[6,11],[6,13],
+  [7,8],[7,9],[7,12],
+  [8,9],[8,10],[8,11],[8,12],[8,13,54],[8,14],
+  [9,10],[9,11],[9,12],[9,15],[9,16,-54],
+  [10,11],[10,13],[10,14],[10,15],
+  [11,12],[11,13],[11,14],[11,15],[11,16],
+  [12,14],[12,15],[12,16],
+  [13,14],[14,15],[15,16]
+];
 
-  const idx = Object.fromEntries(nodes.map((n,i)=>[n.id,i]));
-  const adj = Object.fromEntries(nodes.map(n=>[n.id,[]]));
-  edges.forEach(([a,b]) => { adj[a].push(b); adj[b].push(a); });
-  Object.values(adj).forEach(a => a.sort());
+let G_DFS = {
+  V: [
+    [300,77],
+    [120,177],[240,177],[360,177],[480,177],
+    [180,277],[300,277],[420,277],
+    [240,377],[360,377],
+    [180,477],[300,477],[420,477],
+    [120,577],[240,577],[360,577],[480,577]
+  ],
+  E: randomizeEdges(EU_DFS,0.67)
+};
 
-  function makeEvents(){
-    const ev=[], visited=new Set();
-    function dfs(v,parent=null){
-      visited.add(v);
-      ev.push({type:"enter",node:v,parent,stackNote:`${v} を訪問。visited に追加する。`,line:1});
-      for(const w of adj[v]){
-        ev.push({type:"inspect",node:v,to:w,stackNote:`${v} から隣接頂点 ${w} を調べる。`,line:2});
-        if(!visited.has(w)){
-          ev.push({type:"descend",node:v,to:w,stackNote:`${w} は未訪問。DFS(${w}) を呼び出して深く進む。`,line:3});
-          dfs(w,v);
-          ev.push({type:"resume",node:v,from:w,stackNote:`${w} 側を探索し終えたので ${v} に戻る。`,line:4});
-        }else if(w !== parent){
-          ev.push({type:"skip",node:v,to:w,stackNote:`${w} はすでに訪問済み。再帰せず次の隣接頂点へ。`,line:2});
+class Graph_DFS_Demo extends Graph_U {
+  constructor(ctx,args){
+    super(ctx,args);
+
+    this.visited=[];
+    for(let i=0;i<this.n;i++){
+      this.nodes[i].txt.str=" ";
+      this.visited[i]=i===0;
+    }
+
+    this.stack=[0];
+    this.aim=[1];
+    this.top=0;
+
+    this.z=new Tracer(this.s,{
+      str:"Depth-first search",
+      x:637,y:77,start:args.time,begin:args.begin
+    });
+    this.z.add("DFS(start vertex)",0,35,45,false,false,17);
+    this.z.add("End",4,0,90);
+    this.z.add("DFS(v):",-1,0,175,false,Yellow);
+    this.z.add("Mark v as visited",1,35,220);
+    this.z.add("For each unvisited neighbor, w, of v:",2,35,265);
+    this.z.add("call DFS(w)",3,70,310);
+
+    this.f=54;
+    this.state=0;
+  }
+
+  DFS(){
+    let hlc=Orange;
+    let nhr=12;
+    let ehr=14;
+
+    let node=this.stack[this.top];
+
+    while(this.aim[this.top] < this.n){
+      let aim=this.aim[this.top];
+      this.aim[this.top]++;
+
+      if(this.A[node][aim]){
+        if(!this.visited[aim]){
+          this.z.reset(3);
+          this.top++;
+          this.stack[this.top]=aim;
+          this.aim[this.top]=0;
+          this.visited[aim]=true;
+          this.nodes[aim].highlight(hlc,1e5,nhr);
+          this.edges[node][aim].highlight(hlc,1e5,ehr);
+        }else{
+          this.z.reset(2);
+          this.edges[node][aim].highlight([247,27,7],1,ehr);
         }
+        return;
       }
-      ev.push({type:"leave",node:v,parent,stackNote:`${v} から進める未訪問頂点はない。1つ前へ戻る。`,line:4});
     }
-    dfs("A");
-    ev.push({type:"done",stackNote:"すべての頂点を訪問したので DFS は終了。",line:5});
-    return ev;
-  }
-  const events = makeEvents();
 
-  let p5instance;
-  let running = true, speed = 1, eventIndex = -1;
-  let elapsed = 0, lastTime = performance.now();
-  const baseInterval = 850;
-  let state;
-
-  function freshState(){
-    return {
-      visited:new Set(),
-      stack:[],
-      current:null,
-      activeTree:new Set(),
-      completedTree:new Set(),
-      inspecting:null,
-      skipped:null,
-      order:[],
-      line:0,
-      note:"DFS(A) から開始する。",
-      finished:false
-    };
-  }
-  state = freshState();
-
-  const edgeKey=(a,b)=>[a,b].sort().join("-");
-  function applyEvent(e){
-    state.inspecting = null;
-    state.skipped = null;
-    state.line = e.line || 0;
-    state.note = e.stackNote || "";
-
-    if(e.type==="enter"){
-      state.current=e.node;
-      if(!state.visited.has(e.node)){
-        state.visited.add(e.node);
-        state.order.push(e.node);
+    if(this.aim[this.top]===this.n){
+      this.nodes[node].dehighlight();
+      if(this.top===0){
+        for(let i=0;i<this.n;i++){
+          if(!this.visited[i]){
+            this.stack[0]=i;
+            this.aim[0]=0;
+            this.visited[i]=true;
+            this.state=-1;
+            return;
+          }
+        }
+        this.z.reset(4);
+        this.finished=true;
+        return;
       }
-      if(state.stack[state.stack.length-1] !== e.node) state.stack.push(e.node);
+
+      this.stack[this.top]=-1;
+      this.top--;
+      this.edges[this.stack[this.top]][node].dehighlight();
+      this.z.reset(2);
     }
-    if(e.type==="inspect"){
-      state.current=e.node;
-      state.inspecting=edgeKey(e.node,e.to);
-    }
-    if(e.type==="descend"){
-      state.current=e.node;
-      state.activeTree.add(edgeKey(e.node,e.to));
-    }
-    if(e.type==="resume"){
-      state.current=e.node;
-      const k=edgeKey(e.node,e.from);
-      state.activeTree.delete(k);
-      state.completedTree.add(k);
-    }
-    if(e.type==="skip"){
-      state.current=e.node;
-      state.skipped=edgeKey(e.node,e.to);
-    }
-    if(e.type==="leave"){
-      state.current=e.parent || e.node;
-      if(e.parent){
-        const k=edgeKey(e.node,e.parent);
-        state.activeTree.delete(k);
-        state.completedTree.add(k);
+  }
+
+  show(){
+    super.show();
+    this.z.show();
+
+    if(!this.finished && this.s.frameCount % this.f===0 && this.s.frameCount>this.begin){
+      if(this.state===0){
+        this.z.reset(1);
+        this.DFS();
+      }else if(this.state===-1){
+        this.nodes[this.stack[0]].highlight(Orange,1e5,12);
+        this.state=0;
       }
-      if(state.stack[state.stack.length-1]===e.node) state.stack.pop();
     }
-    if(e.type==="done"){
-      state.current=null; state.finished=true; state.stack=[]; state.line=5;
-    }
-    document.getElementById("captionText").textContent = state.note;
   }
+}
 
-  function nextEvent(){
-    if(eventIndex >= events.length-1) return;
-    eventIndex++;
-    applyEvent(events[eventIndex]);
-  }
-
-  function replay(){
-    running=true; eventIndex=-1; elapsed=0; state=freshState();
-    document.getElementById("captionText").textContent =
-      "DFSは、行けるところまで深く進み、行き止まりになったら1つ前へ戻ります。";
-    document.getElementById("playBtn").textContent="Pause";
-    if(p5instance) p5instance.loop();
-  }
-
-  document.getElementById("playBtn").onclick=()=>{
-    running=!running;
-    document.getElementById("playBtn").textContent=running?"Pause":"Play";
+const GraphDFSScene=function(s){
+  let t={
+    start:frames(1),
+    txt:frames(2),
+    trace:frames(3)
   };
-  document.getElementById("stepBtn").onclick=()=>{running=false;document.getElementById("playBtn").textContent="Play";nextEvent();};
-  document.getElementById("replayBtn").onclick=replay;
-  document.querySelectorAll("[data-speed]").forEach(b=>b.onclick=()=>{
-    document.querySelectorAll("[data-speed]").forEach(x=>x.classList.remove("active"));
-    b.classList.add("active"); speed=Number(b.dataset.speed);
-  });
+  let tnr;
 
-  const sketch = s => {
-    let baseLines=[];
-    let createdAt=0;
-
-    s.setup=()=>{
-      const c=s.createCanvas(W,H);
-      c.parent("canvas-holder");
-      s.frameRate(60);
-      s.textFont("system-ui");
-      s.strokeCap(s.ROUND);
-
-      baseLines = edges.map(([a,b],i)=>{
-        const A=nodes[idx[a]], B=nodes[idx[b]];
-        return new Line(s,{
-          x1:A.x,y1:A.y,x2:B.x,y2:B.y,
-          color:[62,72,88],
-          strokeweight:3,
-          start:8+i*2,
-          duration:.55,
-          mode:2
-        });
-      });
-      createdAt=s.millis();
-    };
-
-    function drawTitle(){
-      s.noStroke(); s.fill(245);
-      s.textSize(28); s.textStyle(s.BOLD);
-      s.text("Depth-First Search",52,48);
-      s.textStyle(s.NORMAL); s.fill(145,157,174); s.textSize(13);
-      s.text("できるだけ深く進み、行き止まりで backtrack する",52,72);
-      s.stroke(35); s.line(760,32,760,620);
-    }
-
-    function drawGraph(){
-      baseLines.forEach(l=>l.show());
-
-      for(const [a,b] of edges){
-        const k=edgeKey(a,b), A=nodes[idx[a]], B=nodes[idx[b]];
-        if(state.completedTree.has(k)){
-          s.stroke(247,227,47,165); s.strokeWeight(5); s.line(A.x,A.y,B.x,B.y);
-        }
-        if(state.activeTree.has(k)){
-          s.stroke(247,137,27); s.strokeWeight(8); s.line(A.x,A.y,B.x,B.y);
-        }
-        if(state.inspecting===k){
-          s.stroke(88,196,221); s.strokeWeight(8); s.line(A.x,A.y,B.x,B.y);
-        }
-        if(state.skipped===k){
-          s.stroke(247,77,97); s.strokeWeight(8); s.line(A.x,A.y,B.x,B.y);
-        }
-      }
-
-      for(const n of nodes){
-        const vis=state.visited.has(n.id), cur=state.current===n.id;
-        if(cur){
-          const pulse=7+3*Math.sin(s.frameCount*.12);
-          s.noFill();s.stroke(247,137,27,170);s.strokeWeight(3);s.circle(n.x,n.y,54+pulse);
-        }
-        s.strokeWeight(vis?4:2);
-        s.stroke(vis?247:95,vis?227:105,vis?47:120);
-        s.fill(0); s.circle(n.x,n.y,42);
-        s.noStroke();s.fill(vis?247:220,vis?227:226,vis?47:232);
-        s.textAlign(s.CENTER,s.CENTER);s.textStyle(s.BOLD);s.textSize(18);s.text(n.id,n.x,n.y+1);
-        s.textStyle(s.NORMAL);
-      }
-
-      s.textAlign(s.LEFT,s.BASELINE);s.noStroke();s.fill(145,157,174);s.textSize(12);
-      s.text("VISIT ORDER",52,555);
-      s.fill(245);s.textSize(16);
-      s.text(state.order.length?state.order.join("  →  "):"A から開始",52,582);
-    }
-
-    function drawCode(){
-      const x=800, y=80;
-      s.textAlign(s.LEFT,s.BASELINE);s.noStroke();
-      s.fill(88,196,221);s.textSize(13);s.textStyle(s.BOLD);s.text("PSEUDOCODE",x,y);
-      s.textStyle(s.NORMAL);
-
-      const lines=[
-        "DFS(v):",
-        "  1. v を visited に入れる",
-        "  2. v の隣接頂点 w を順に調べる",
-        "  3. 未訪問なら DFS(w) を呼ぶ",
-        "  4. 終わったら v に戻る",
-        "  5. すべて終われば終了"
-      ];
-      const ys=[122,164,206,248,290,332];
-
-      lines.forEach((txt,i)=>{
-        const active = (i===0 && state.line===0) || i===state.line;
-        if(active){
-          s.noStroke();s.fill(247,137,27,30);s.rect(x-14,ys[i]-24,342,34,7);
-          s.fill(247,137,27);
-        }else s.fill(i===0?247:200);
-        s.textSize(i===0?18:15);s.textStyle(i===0?s.BOLD:s.NORMAL);s.text(txt,x,ys[i]);
-      });
-      s.textStyle(s.NORMAL);
-
-      s.fill(145,157,174);s.textSize(12);s.text("RECURSION STACK",x,390);
-      const cells=state.stack.length?state.stack:["—"];
-      cells.forEach((v,i)=>{
-        const yy=422+i*38;
-        s.stroke(i===cells.length-1 && v!=="—"?247:64,
-                 i===cells.length-1 && v!=="—"?137:74,
-                 i===cells.length-1 && v!=="—"?27:88);
-        s.strokeWeight(2);s.fill(11,15,20);s.rect(x,yy,190,29,6);
-        s.noStroke();s.fill(v==="—"?120:240);s.textSize(14);
-        s.text(`${i===cells.length-1?"TOP  ":""}${v}`,x+12,yy+20);
-      });
-
-      s.noStroke();s.fill(145,157,174);s.textSize(12);s.text("WHAT IS HAPPENING?",x,590);
-      s.fill(225);s.textSize(14);
-      const msg=state.note || "DFS(A) から開始する。";
-      wrapText(msg,x,614,330,20);
-    }
-
-    function wrapText(str,x,y,maxWidth,lineH){
-      const words=[...str];
-      let line="";
-      for(const ch of words){
-        const test=line+ch;
-        if(s.textWidth(test)>maxWidth && line){
-          s.text(line,x,y); line=ch; y+=lineH;
-        }else line=test;
-      }
-      if(line)s.text(line,x,y);
-    }
-
-    s.draw=()=>{
-      s.background(0);
-      drawTitle();
-      drawGraph();
-      drawCode();
-
-      const now=performance.now();
-      const dt=now-lastTime; lastTime=now;
-      if(running && s.millis()-createdAt>1400 && !state.finished){
-        elapsed+=dt*speed;
-        if(elapsed>=baseInterval){
-          elapsed=0; nextEvent();
-        }
-      }
-
-      s.stroke(26);s.strokeWeight(1);s.line(48,620,1148,620);
-      s.noStroke();s.fill(100);s.textAlign(s.LEFT,s.BASELINE);s.textSize(11);
-      s.text("Manim.js / p5.js inspired graph-algorithm visualization",52,646);
-    };
+  s.preload=function(){
+    tnr=s.loadFont("https://cdn.jsdelivr.net/gh/JazonJiao/Manim.js@master/lib/font/times.ttf");
   };
 
-  p5instance = new p5(sketch);
-})();
+  s.setup=function(){
+    setup2D(s);
+    s.canvas.parent("canvas-wrap");
+    s.g=new Graph_DFS_Demo(s,{
+      V:G_DFS.V,E:G_DFS.E,font:tnr,
+      start:t.start,begin:t.trace,time:t.txt,
+      color_e:[7,97,7]
+    });
+  };
+
+  s.draw=function(){
+    s.background(0);
+    s.g.show();
+  };
+};
+
+new p5(GraphDFSScene);
 </script>
 </body>
 </html>
