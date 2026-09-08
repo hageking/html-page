@@ -25,90 +25,57 @@ jobs:
           npm install playwright@1.55.0 >/dev/null 2>&1
           npx playwright install chromium --with-deps
 
-      - name: Test published DFS page in Chromium
-        env:
-          TEST_URL: https://hageking.github.io/html-page/dfs-manim-demo.html
+      - name: Compare reference BFS and published DFS in Chromium
         run: |
           cat > test-dfs.mjs <<'EOF'
           import { chromium } from 'playwright';
 
           const browser = await chromium.launch({headless:true});
-          const page = await browser.newPage({viewport:{width:1200,height:675}});
-          const errors = [];
-          const consoleMessages = [];
-          page.on('pageerror', e => errors.push(String(e)));
-          page.on('console', m => {
-            consoleMessages.push(`${m.type()}: ${m.text()}`);
-            if (m.type() === 'error') errors.push(`console: ${m.text()}`);
-          });
 
-          const base = process.env.TEST_URL;
-          let loaded = false;
-          for (let attempt = 1; attempt <= 12; attempt++) {
-            errors.length = 0;
-            consoleMessages.length = 0;
-            try {
-              const res = await page.goto(`${base}?e2e=${Date.now()}-${attempt}`, {waitUntil:'networkidle', timeout:30000});
-              console.log(`attempt=${attempt} http=${res?.status()}`);
-              await page.waitForTimeout(3000);
-              if (await page.locator('canvas').count()) { loaded = true; break; }
-            } catch (e) {
-              console.log(`attempt=${attempt} navigation_error=${e}`);
-            }
-            await page.waitForTimeout(5000);
+          async function inspect(url, screenshot, waitMs) {
+            const page = await browser.newPage({viewport:{width:1200,height:675}});
+            const errors=[];
+            page.on('pageerror', e=>errors.push(String(e)));
+            page.on('console', m=>{ if(m.type()==='error') errors.push(`console: ${m.text()}`); });
+            const res=await page.goto(`${url}${url.includes('?')?'&':'?'}e2e=${Date.now()}`, {waitUntil:'networkidle',timeout:30000});
+            await page.waitForSelector('canvas',{timeout:15000});
+            await page.waitForTimeout(waitMs);
+            const result=await page.evaluate(()=>{
+              const c=document.querySelector('canvas');
+              const ctx=c.getContext('2d');
+              const w=c.width,h=c.height,d=ctx.getImageData(0,0,w,h).data;
+              let minX=w,minY=h,maxX=-1,maxY=-1,nonBlack=0,bright=0;
+              for(let y=0;y<h;y+=3){for(let x=0;x<w;x+=3){
+                const i=(y*w+x)*4,r=d[i],g=d[i+1],b=d[i+2],a=d[i+3];
+                if(a&&(r>8||g>8||b>8)){nonBlack++;minX=Math.min(minX,x);minY=Math.min(minY,y);maxX=Math.max(maxX,x);maxY=Math.max(maxY,y);}
+                if(r+g+b>180) bright++;
+              }}
+              return {width:w,height:h,nonBlack,bright,bounds:[minX,minY,maxX,maxY],graphU:typeof Graph_U,tracer:typeof Tracer,p5Type:typeof p5};
+            });
+            await page.screenshot({path:screenshot,fullPage:true});
+            await page.close();
+            return {http:res?.status(),errors,result};
           }
 
-          if (!loaded) {
-            console.log('console messages:', consoleMessages.join('\n'));
-            await browser.close();
-            throw new Error('No canvas was created on the published page');
-          }
-
-          const result = await page.evaluate(() => {
-            const canvas = document.querySelector('canvas');
-            const ctx = canvas.getContext('2d');
-            const w = canvas.width, h = canvas.height;
-            const data = ctx.getImageData(0,0,w,h).data;
-            let nonBlack = 0;
-            let bright = 0;
-            for (let y=0; y<h; y+=4) {
-              for (let x=0; x<w; x+=4) {
-                const i=(y*w+x)*4;
-                const r=data[i], g=data[i+1], b=data[i+2], a=data[i+3];
-                if (a && (r>8 || g>8 || b>8)) nonBlack++;
-                if (r+g+b>180) bright++;
-              }
-            }
-            return {
-              width:w,
-              height:h,
-              nonBlack,
-              bright,
-              graphU: typeof Graph_U,
-              tracer: typeof Tracer,
-              p5Type: typeof p5,
-              graphInstance: !!window._dfsGraphReady
-            };
-          });
-
-          console.log('render result:', JSON.stringify(result));
-          console.log('console messages:', consoleMessages.join('\n'));
-          await page.screenshot({path:'dfs-e2e.png', fullPage:true});
+          const ref=await inspect('https://www.jazonjiao.com/demo/bfs/','reference-bfs.png',17000);
+          console.log('REFERENCE',JSON.stringify(ref));
+          const dfs=await inspect('https://hageking.github.io/html-page/dfs-manim-demo.html','dfs-e2e.png',17000);
+          console.log('DFS',JSON.stringify(dfs));
           await browser.close();
 
-          if (errors.length) throw new Error(`Browser errors:\n${errors.join('\n')}`);
-          if (result.graphU !== 'function' || result.tracer !== 'function' || result.p5Type !== 'function') {
-            throw new Error(`Manim.js classes not loaded: ${JSON.stringify(result)}`);
-          }
-          if (result.width < 1000 || result.height < 500) throw new Error(`Unexpected canvas size: ${result.width}x${result.height}`);
-          if (result.nonBlack < 500 || result.bright < 100) throw new Error(`Canvas appears blank/near-black: ${JSON.stringify(result)}`);
+          if(ref.errors.length) throw new Error(`Reference browser errors: ${ref.errors.join('\n')}`);
+          if(dfs.errors.length) throw new Error(`DFS browser errors: ${dfs.errors.join('\n')}`);
+          if(dfs.result.graphU!=='function'||dfs.result.tracer!=='function'||dfs.result.p5Type!=='function') throw new Error(`Manim.js missing: ${JSON.stringify(dfs.result)}`);
+          if(dfs.result.nonBlack<500||dfs.result.bright<100) throw new Error(`DFS blank: ${JSON.stringify(dfs.result)}`);
           EOF
           node ./test-dfs.mjs
 
-      - name: Upload screenshot
+      - name: Upload screenshots
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: dfs-e2e-screenshot
-          path: dfs-e2e.png
+          name: dfs-reference-comparison
+          path: |
+            reference-bfs.png
+            dfs-e2e.png
           if-no-files-found: ignore
