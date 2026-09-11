@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+<meta name="theme-color" content="#1454c8">
+<title>Voice Dot World Map</title>
+<style>
+:root{--bg1:#1f62da;--bg2:#124ab8;--text:#eaf3ff}
+*{box-sizing:border-box}
+html,body{width:100%;height:100%;margin:0;overflow:hidden}
+body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Inter,sans-serif;background:radial-gradient(circle at 50% 35%,#2a73ef 0%,var(--bg1) 35%,var(--bg2) 100%);color:var(--text);-webkit-tap-highlight-color:transparent;touch-action:none}
+#stage{position:fixed;inset:0;z-index:1}canvas{display:block;width:100%;height:100%}#file,#media{display:none}.ui{position:fixed;inset:0;z-index:5;pointer-events:none}
+.prompt{position:absolute;left:50%;bottom:17.2%;transform:translateX(-50%);pointer-events:auto;border:0;padding:12px 20px;background:linear-gradient(90deg,#dff5ff,#fff 55%,#d6e8ff 100%);-webkit-background-clip:text;background-clip:text;color:transparent;font:600 clamp(17px,4.5vw,21px)/1.2 -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;letter-spacing:-.025em;white-space:nowrap;cursor:pointer}.prompt.listening{animation:pulse 1.7s ease-in-out infinite}
+.controls{position:absolute;left:50%;bottom:max(4.5%,env(safe-area-inset-bottom));transform:translateX(-50%);display:flex;gap:34px;pointer-events:auto}.circle{position:relative;width:58px;height:58px;border-radius:50%;border:1px solid rgba(255,255,255,.14);background:rgba(28,45,84,.42);backdrop-filter:blur(8px);display:grid;place-items:center;color:#eef5ff;cursor:pointer;transition:transform .14s ease,background .2s ease,color .2s ease}.circle:active{transform:scale(.93)}.circle svg{width:23px;height:23px}.circle.close svg{width:22px;height:22px}.circle.mic.active{background:rgba(255,255,255,.18)}
+#status{position:absolute;left:50%;bottom:13.4%;transform:translateX(-50%);font-size:10px;color:rgba(255,255,255,.55);white-space:nowrap;opacity:0;transition:.2s;max-width:80vw;overflow:hidden;text-overflow:ellipsis}#status.show{opacity:1}.version{position:fixed;right:max(10px,env(safe-area-inset-right));bottom:max(9px,env(safe-area-inset-bottom));z-index:8;font-size:9px;line-height:1;color:rgba(255,255,255,.45);letter-spacing:.06em;font-weight:500;pointer-events:none;user-select:none}@keyframes pulse{0%,100%{opacity:.68}50%{opacity:1}}
+</style>
+</head>
+<body>
+<div id="stage"><canvas id="canvas"></canvas></div>
+<input id="file" type="file" accept="video/*,audio/*">
+<video id="media" playsinline preload="metadata"></video>
+<div class="ui"><button id="prompt" class="prompt">Say something...</button><div id="status"></div><div class="controls"><button id="close" class="circle close" aria-label="停止"><svg viewBox="0 0 24 24" fill="none"><path d="M5 5l14 14M19 5L5 19" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></button><button id="mic" class="circle mic" aria-label="マイク"><svg viewBox="0 0 24 24" fill="none"><rect x="8.2" y="3" width="7.6" height="12" rx="3.8" stroke="currentColor" stroke-width="1.7"/><path d="M5.5 11.5a6.5 6.5 0 0013 0M12 18v3M8.5 21h7" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg></button></div></div>
+<div class="version">v1.1.0</div>
+<script>
+const $=id=>document.getElementById(id);const canvas=$('canvas'),ctx=canvas.getContext('2d'),file=$('file'),media=$('media'),promptBtn=$('prompt'),micBtn=$('mic'),closeBtn=$('close'),status=$('status');let W=0,H=0,DPR=Math.min(devicePixelRatio||1,2);
+function resize(){W=innerWidth;H=innerHeight;DPR=Math.min(devicePixelRatio||1,2);canvas.width=Math.floor(W*DPR);canvas.height=Math.floor(H*DPR);canvas.style.width=W+'px';canvas.style.height=H+'px';ctx.setTransform(DPR,0,0,DPR,0,0)}addEventListener('resize',resize);resize();
+function showStatus(t,ms=1600){status.textContent=t;status.classList.add('show');clearTimeout(showStatus.t);showStatus.t=setTimeout(()=>status.classList.remove('show'),ms)}
+const LAND_POLYGONS=[
+[[-168,72],[-150,72],[-140,68],[-130,60],[-126,50],[-124,42],[-122,36],[-117,32],[-112,28],[-105,25],[-96,18],[-90,18],[-84,24],[-82,28],[-80,32],[-75,38],[-70,45],[-66,48],[-60,52],[-56,58],[-64,64],[-80,72],[-102,75],[-130,74],[-150,72]],
+[[-73,59],[-60,60],[-45,65],[-35,72],[-35,80],[-46,83],[-60,82],[-70,76],[-73,59]],
+[[-92,18],[-88,20],[-84,18],[-82,10],[-78,8],[-77,10],[-80,14],[-84,16],[-88,18],[-92,18]],
+[[-81,12],[-76,8],[-73,2],[-71,-8],[-69,-18],[-65,-28],[-62,-38],[-60,-48],[-58,-55],[-54,-54],[-50,-48],[-46,-40],[-42,-30],[-38,-18],[-37,-8],[-40,2],[-46,8],[-56,11],[-66,12],[-75,12],[-81,12]],
+[[-11,36],[-5,43],[2,45],[8,50],[14,56],[20,60],[28,61],[36,60],[42,56],[35,50],[30,45],[23,41],[15,39],[8,38],[0,36],[-11,36]],
+[[-17,37],[-5,36],[6,36],[18,34],[30,30],[36,24],[41,13],[43,5],[45,-6],[42,-16],[36,-24],[28,-31],[20,-35],[10,-35],[3,-28],[-2,-18],[-6,-5],[-9,8],[-14,22],[-17,37]],
+[[26,36],[36,42],[46,48],[58,55],[72,58],[90,60],[110,60],[126,57],[140,52],[152,48],[162,48],[168,42],[166,32],[156,26],[146,22],[135,20],[124,16],[112,15],[100,18],[90,22],[80,26],[72,24],[66,18],[60,14],[54,16],[50,24],[44,30],[38,34],[32,37],[26,36]],
+[[68,23],[74,27],[80,25],[86,20],[88,13],[84,8],[78,7],[73,10],[70,16],[68,23]],
+[[38,30],[46,32],[55,26],[56,18],[51,14],[45,16],[41,22],[38,30]],
+[[94,18],[102,20],[108,16],[112,11],[115,5],[112,0],[106,-2],[100,2],[96,8],[94,18]],
+[[130,31],[134,34],[139,37],[143,42],[145,45],[141,43],[137,39],[133,35],[130,31]],
+[[-8,50],[-4,58],[1,58],[0,52],[-5,50],[-8,50]],
+[[-24,63],[-18,66],[-14,65],[-17,63],[-24,63]],
+[[44,-13],[49,-15],[50,-21],[47,-26],[44,-23],[44,-13]],
+[[112,-11],[118,-18],[128,-18],[138,-20],[150,-27],[153,-35],[147,-40],[136,-39],[125,-35],[116,-30],[112,-22],[112,-11]],
+[[166,-35],[173,-39],[176,-45],[169,-47],[166,-35]],
+[[116,-6],[124,-7],[132,-6],[138,-3],[140,1],[135,4],[128,2],[121,-1],[116,-6]]];
+function pointInPolygon(x,y,poly){let inside=false;for(let i=0,j=poly.length-1;i<poly.length;j=i++){const xi=poly[i][0],yi=poly[i][1],xj=poly[j][0],yj=poly[j][1];const hit=((yi>y)!==(yj>y))&&(x<(xj-xi)*(y-yi)/(yj-yi+1e-9)+xi);if(hit)inside=!inside}return inside}function isLand(lon,lat){for(const p of LAND_POLYGONS)if(pointInPolygon(lon,lat,p))return true;return false}
+const dots=[];function buildDots(){dots.length=0;const sx=innerWidth<700?3:2.4,sy=innerWidth<700?3:2.4;for(let lat=84;lat>=-58;lat-=sy){for(let lon=-180;lon<=180;lon+=sx){if(!isLand(lon,lat))continue;const x=(lon+180)/360,y=(90-lat)/180;if(x<.015||x>.985)continue;dots.push({x,y,phase:Math.random()*Math.PI*2,rand:Math.random()})}}}buildDots();
+let audioCtx,analyser,freq,mediaSource,currentSource,micStream,objectUrl,smBass=0,smMid=0,smHigh=0,smEnergy=0;function ensureAudio(){if(!audioCtx){audioCtx=new(window.AudioContext||window.webkitAudioContext)();analyser=audioCtx.createAnalyser();analyser.fftSize=1024;analyser.smoothingTimeConstant=.76;freq=new Uint8Array(analyser.frequencyBinCount)}if(audioCtx.state==='suspended')audioCtx.resume()}function disconnect(){try{currentSource?.disconnect()}catch{}currentSource=null;if(micStream){micStream.getTracks().forEach(t=>t.stop());micStream=null}}function band(lo,hi){if(!analyser)return 0;const ny=audioCtx.sampleRate/2,a=Math.floor(lo/ny*freq.length),b=Math.min(freq.length-1,Math.ceil(hi/ny*freq.length));let s=0,n=0;for(let i=a;i<=b;i++){s+=freq[i];n++}return n?s/n/255:0}function connectMedia(){ensureAudio();disconnect();if(!mediaSource)mediaSource=audioCtx.createMediaElementSource(media);currentSource=mediaSource;mediaSource.connect(analyser);mediaSource.connect(audioCtx.destination)}async function startMic(){try{ensureAudio();disconnect();media.pause();micStream=await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:true,noiseSuppression:true,autoGainControl:true}});currentSource=audioCtx.createMediaStreamSource(micStream);currentSource.connect(analyser);micBtn.classList.add('active');promptBtn.classList.add('listening');promptBtn.textContent='Listening...';showStatus('Microphone active')}catch{showStatus('マイクを利用できません',2300)}}function stopAll(clear=false){disconnect();media.pause();micBtn.classList.remove('active');promptBtn.classList.remove('listening');promptBtn.textContent='Say something...';smBass=smMid=smHigh=smEnergy=0;if(clear){media.removeAttribute('src');media.load();if(objectUrl){URL.revokeObjectURL(objectUrl);objectUrl=null}}}function loadFile(f){if(!f)return;stopAll(true);ensureAudio();objectUrl=URL.createObjectURL(f);media.src=objectUrl;media.load();connectMedia();promptBtn.textContent='Listening...';promptBtn.classList.add('listening');showStatus(f.name,2200);media.play().catch(()=>{promptBtn.textContent='Tap to play';promptBtn.classList.remove('listening')})}
+promptBtn.onclick=()=>{if(media.src&&media.paused&&!micStream){ensureAudio();media.play();promptBtn.textContent='Listening...';promptBtn.classList.add('listening')}else file.click()};file.onchange=()=>loadFile(file.files?.[0]);micBtn.onclick=()=>micStream?stopAll():startMic();closeBtn.onclick=()=>stopAll(true);media.onended=()=>{promptBtn.textContent='Say something...';promptBtn.classList.remove('listening')};
+function drawBackground(){const g=ctx.createLinearGradient(0,0,0,H);g.addColorStop(0,'#2269e2');g.addColorStop(.45,'#1a58cf');g.addColorStop(1,'#124ab8');ctx.fillStyle=g;ctx.fillRect(0,0,W,H)}function drawDots(t){const mapW=W*1.02,mapH=Math.min(H*.48,mapW*.50),ox=(W-mapW)*.5,oy=H*.12,pulse=smBass*1.2+smMid*.55+smHigh*.25;for(const d of dots){const x=ox+d.x*mapW,y=oy+d.y*mapH,local=Math.sin(t*2+d.phase)*(.4+d.rand*.8),r=(innerWidth<700?1.55:1.95)+pulse*.85+local*.12,alpha=.92-d.rand*.16+Math.min(smEnergy,.9)*.10;ctx.beginPath();ctx.fillStyle=`rgba(255,255,255,${alpha})`;ctx.arc(x,y,r,0,Math.PI*2);ctx.fill()}}
+function animate(now){requestAnimationFrame(animate);const t=now*.001;if(analyser&&currentSource){analyser.getByteFrequencyData(freq);const b=band(35,190),m=band(190,2200),h=band(2200,12000),e=b*.50+m*.34+h*.16;smBass+=(b-smBass)*.18;smMid+=(m-smMid)*.13;smHigh+=(h-smHigh)*.14;smEnergy+=(e-smEnergy)*.15}else{smBass+=(.006-smBass)*.03;smMid+=(.005-smMid)*.03;smHigh+=(.004-smHigh)*.03;smEnergy+=(.004-smEnergy)*.03}drawBackground();drawDots(t)}requestAnimationFrame(animate);
+</script>
+</body>
+</html>
