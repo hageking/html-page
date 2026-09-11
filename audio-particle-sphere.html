@@ -4,12 +4,12 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
 <meta name="theme-color" content="#111010">
-<title>Voice Particle Sphere</title>
+<title>Voice Particle Earth</title>
 <style>
 :root{color-scheme:dark;--bg:#111010}
 *{box-sizing:border-box}
 html,body{width:100%;height:100%;margin:0;overflow:hidden;background:var(--bg)}
-body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Inter,sans-serif;color:#eee;-webkit-tap-highlight-color:transparent;touch-action:none;background:radial-gradient(circle at 50% 25%,rgba(40,70,120,.045),transparent 28%),#111010}
+body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Inter,sans-serif;color:#eee;-webkit-tap-highlight-color:transparent;touch-action:none;background:radial-gradient(circle at 50% 38%,rgba(255,255,255,.018),transparent 28%),#111010}
 #stage{position:fixed;inset:0;z-index:1;overflow:hidden}
 #stage canvas{display:block;width:100%;height:100%}
 #file,#media{display:none}
@@ -24,6 +24,8 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Inter,sans-serif;co
 .circle.mic.active{color:#effcff;background:#20292b}.circle.mic.active:after{opacity:1}
 #status{position:absolute;left:50%;bottom:13.4%;transform:translateX(-50%);font-size:10px;color:rgba(255,255,255,.3);white-space:nowrap;opacity:0;transition:.2s;max-width:80vw;overflow:hidden;text-overflow:ellipsis}
 #status.show{opacity:1}
+.loading{position:absolute;left:50%;top:43%;transform:translate(-50%,-50%);font-size:11px;letter-spacing:.08em;color:rgba(255,255,255,.32);transition:opacity .35s}
+.loading.hidden{opacity:0}
 @keyframes pulse{0%,100%{opacity:.68}50%{opacity:1}}
 </style>
 </head>
@@ -32,6 +34,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Inter,sans-serif;co
 <input id="file" type="file" accept="video/*,audio/*">
 <video id="media" playsinline preload="metadata"></video>
 <div class="ui">
+  <div id="loading" class="loading">MAPPING EARTH...</div>
   <button id="prompt" class="prompt">Say something...</button>
   <div id="status"></div>
   <div class="controls">
@@ -41,8 +44,11 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Inter,sans-serif;co
 </div>
 <script type="module">
 import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.186.0/build/three.module.js';
+import {geoContains} from 'https://cdn.jsdelivr.net/npm/d3-geo@3/+esm';
+import {merge} from 'https://cdn.jsdelivr.net/npm/topojson-client@3/+esm';
+
 const $=id=>document.getElementById(id);
-const stage=$('stage'),file=$('file'),media=$('media'),promptBtn=$('prompt'),micBtn=$('mic'),closeBtn=$('close'),status=$('status');
+const stage=$('stage'),file=$('file'),media=$('media'),promptBtn=$('prompt'),micBtn=$('mic'),closeBtn=$('close'),status=$('status'),loading=$('loading');
 
 const scene=new THREE.Scene();
 scene.background=new THREE.Color(0x111010);
@@ -54,70 +60,112 @@ renderer.setSize(innerWidth,innerHeight);
 renderer.setClearColor(0x111010,1);
 stage.appendChild(renderer.domElement);
 
+const mobile=innerWidth<700;
+const BASE_SCALE=mobile?.78:.93;
 const root=new THREE.Group();
-root.position.y=0.70;
+root.position.y=.58;
+root.scale.setScalar(BASE_SCALE);
 scene.add(root);
 
-const mobile=innerWidth<700;
-const BASE_SCALE=mobile?.86:1;
-root.scale.setScalar(BASE_SCALE);
-const count=mobile?1650:3000;
-const geo=new THREE.BufferGeometry();
-const pos=new Float32Array(count*3),dirs=new Float32Array(count*3),radii=new Float32Array(count),randoms=new Float32Array(count),phases=new Float32Array(count),colors=new Float32Array(count*3);
-const palette=[0xffffff];
-for(let i=0;i<count;i++){
-  const z=Math.random()*2-1,a=Math.random()*Math.PI*2,q=Math.sqrt(1-z*z),j=i*3;
-  dirs[j]=q*Math.cos(a);dirs[j+1]=z;dirs[j+2]=q*Math.sin(a);
-  radii[i]=Math.random()<.93?.925+Math.random()*.075:.62+Math.random()*.16;
-  randoms[i]=Math.random();phases[i]=Math.random()*Math.PI*2;
-  const c=new THREE.Color(0xffffff);colors[j]=c.r;colors[j+1]=c.g;colors[j+2]=c.b;
-}
-geo.setAttribute('position',new THREE.BufferAttribute(pos,3));
-geo.setAttribute('aDir',new THREE.BufferAttribute(dirs,3));
-geo.setAttribute('aRadius',new THREE.BufferAttribute(radii,1));
-geo.setAttribute('aRand',new THREE.BufferAttribute(randoms,1));
-geo.setAttribute('aPhase',new THREE.BufferAttribute(phases,1));
-geo.setAttribute('aColor',new THREE.BufferAttribute(colors,3));
-geo.boundingSphere=new THREE.Sphere(new THREE.Vector3(),4);
+const EARTH_RADIUS=1.52;
+const occluder=new THREE.Mesh(
+  new THREE.SphereGeometry(EARTH_RADIUS*.993,64,40),
+  new THREE.MeshBasicMaterial({color:0x111010,depthWrite:true,depthTest:true})
+);
+root.add(occluder);
 
-const uniforms={uTime:{value:0},uBass:{value:0},uMid:{value:0},uHigh:{value:0},uEnergy:{value:0},uPixelRatio:{value:Math.min(devicePixelRatio,2)}};
+const uniforms={
+  uTime:{value:0},uBass:{value:0},uMid:{value:0},uHigh:{value:0},uEnergy:{value:0},
+  uPixelRatio:{value:Math.min(devicePixelRatio,2)}
+};
+
 const material=new THREE.ShaderMaterial({
   uniforms,transparent:true,depthTest:true,depthWrite:false,blending:THREE.NormalBlending,
   vertexShader:`
-attribute vec3 aDir;attribute float aRadius;attribute float aRand;attribute float aPhase;attribute vec3 aColor;
+attribute vec3 aDir;attribute float aRand;attribute float aPhase;
 uniform float uTime,uBass,uMid,uHigh,uEnergy,uPixelRatio;
-varying vec3 vColor;varying float vRand;varying float vEnergy;
+varying float vRand;varying float vEnergy;
 void main(){
- vec3 n=normalize(aDir);float az=atan(n.z,n.x),el=asin(n.y);
- float bass=smoothstep(.025,.62,uBass),mid=smoothstep(.018,.52,uMid),high=smoothstep(.012,.42,uHigh);
- float breathe=.010*sin(uTime*.72+aPhase)+.006*sin(uTime*.43+az*2.0);
- float wave=sin(az*3.1+el*2.4-uTime*1.55+aPhase)*mid;
- float detail=sin(az*(7.0+floor(aRand*4.0))-el*5.0+uTime*(1.9+aRand*1.7)+aPhase)*high;
- float radius=1.56*aRadius*(1.0+breathe+.20*pow(bass,1.2));
- radius+=aRadius*(.13*wave+.04*detail);
- float burst=pow(max(0.0,high-.18),1.25)*(0.75+1.8*pow(aRand,5.0))*max(0.0,sin(aPhase+uTime*4.2));
- radius+=burst;
- vec3 tangent=normalize(cross(n,abs(n.y)>.9?vec3(1.,0.,0.):vec3(0.,1.,0.)));
- vec3 p=n*radius+tangent*(.025*detail+.012*sin(aPhase+uTime*.7));
- vec4 mv=modelViewMatrix*vec4(p,1.0);
- float perspective=31.0/max(4.0,-mv.z);
- gl_PointSize=(1.05+aRand*.85+high*(.30+aRand*.44))*uPixelRatio*perspective;
- gl_Position=projectionMatrix*mv;
- vColor=aColor;vRand=aRand;vEnergy=uEnergy;
+  vec3 n=normalize(aDir);
+  float bass=smoothstep(.025,.62,uBass);
+  float mid=smoothstep(.018,.52,uMid);
+  float high=smoothstep(.012,.42,uHigh);
+  float breathe=.004*sin(uTime*.7+aPhase);
+  float localWave=sin((n.x*4.7+n.y*6.1+n.z*3.9)+uTime*2.0+aPhase)*mid;
+  float detail=sin((n.x*11.0-n.y*8.0+n.z*9.0)+uTime*3.0+aPhase)*high;
+  float displacement=.10*pow(bass,1.18)+.022*localWave+.010*detail+breathe;
+  vec3 p=n*(${EARTH_RADIUS.toFixed(2)}+displacement);
+  vec4 mv=modelViewMatrix*vec4(p,1.0);
+  float perspective=31.0/max(4.0,-mv.z);
+  gl_PointSize=(1.0+aRand*.72+high*(.18+aRand*.32))*uPixelRatio*perspective;
+  gl_Position=projectionMatrix*mv;
+  vRand=aRand;vEnergy=uEnergy;
 }`,
   fragmentShader:`
-precision highp float;varying vec3 vColor;varying float vRand;varying float vEnergy;
+precision highp float;varying float vRand;varying float vEnergy;
 void main(){
- vec2 p=gl_PointCoord-vec2(.5);float d=length(p);
- if(d>=.49)discard;
- float edge=1.0-smoothstep(.20,.49,d);
- float core=1.0-smoothstep(0.0,.16,d);
- float alpha=edge*(.40+vRand*.24+min(vEnergy,.8)*.10);
- if(alpha<.015)discard;
- gl_FragColor=vec4(vec3(1.0),alpha);
+  vec2 p=gl_PointCoord-vec2(.5);float d=length(p);
+  if(d>=.49)discard;
+  float edge=1.0-smoothstep(.20,.49,d);
+  float alpha=edge*(.48+vRand*.26+min(vEnergy,.8)*.12);
+  if(alpha<.015)discard;
+  gl_FragColor=vec4(vec3(1.0),alpha);
 }`
 });
-const particles=new THREE.Points(geo,material);root.add(particles);
+
+let earthPoints=null;
+async function buildEarth(){
+  let topo;
+  try{
+    const r=await fetch('https://cdn.jsdelivr.net/npm/world-atlas@2/countries-50m.json',{cache:'force-cache'});
+    if(!r.ok)throw new Error('50m map failed');
+    topo=await r.json();
+  }catch{
+    const r=await fetch('https://cdn.jsdelivr.net/npm/world-atlas@2/countries-110m.json',{cache:'force-cache'});
+    topo=await r.json();
+  }
+
+  const land=merge(topo,topo.objects.countries.geometries);
+  const candidateCount=mobile?9200:18000;
+  const golden=Math.PI*(3-Math.sqrt(5));
+  const dirs=[];
+  const randoms=[];
+  const phases=[];
+  const centerLon=138*Math.PI/180;
+
+  for(let i=0;i<candidateCount;i++){
+    const y=1-2*(i+.5)/candidateCount;
+    const lat=Math.asin(y);
+    let lon=(i*golden)%(Math.PI*2);
+    if(lon>Math.PI)lon-=Math.PI*2;
+    const latDeg=lat*180/Math.PI;
+    const lonDeg=lon*180/Math.PI;
+    if(!geoContains(land,[lonDeg,latDeg]))continue;
+
+    const c=Math.cos(lat);
+    const rel=lon-centerLon;
+    dirs.push(c*Math.sin(rel),Math.sin(lat),c*Math.cos(rel));
+    randoms.push(Math.random());
+    phases.push(Math.random()*Math.PI*2);
+  }
+
+  const geo=new THREE.BufferGeometry();
+  geo.setAttribute('position',new THREE.BufferAttribute(new Float32Array(dirs.length),3));
+  geo.setAttribute('aDir',new THREE.BufferAttribute(new Float32Array(dirs),3));
+  geo.setAttribute('aRand',new THREE.BufferAttribute(new Float32Array(randoms),1));
+  geo.setAttribute('aPhase',new THREE.BufferAttribute(new Float32Array(phases),1));
+  geo.boundingSphere=new THREE.Sphere(new THREE.Vector3(),2.2);
+  earthPoints=new THREE.Points(geo,material);
+  earthPoints.renderOrder=2;
+  root.add(earthPoints);
+  loading.classList.add('hidden');
+  setTimeout(()=>loading.remove(),500);
+}
+
+buildEarth().catch(()=>{
+  loading.textContent='MAP DATA ERROR';
+  showStatus('地図データを読み込めませんでした',2600);
+});
 
 let audioCtx,analyser,freq,mediaSource,currentSource,micStream,objectUrl;
 let smBass=0,smMid=0,smHigh=0,smEnergy=0;
@@ -135,31 +183,38 @@ micBtn.onclick=()=>micStream?stopAll():startMic();
 closeBtn.onclick=()=>stopAll(true);
 media.onended=()=>{promptBtn.textContent='Say something...';promptBtn.classList.remove('listening')};
 
-let drag=false,lx=0,ly=0,tx=-.03,ty=0,rx=-.03,ry=0;
+let drag=false,lx=0,ly=0,tx=-.12,ty=0,rx=-.12,ry=0;
 renderer.domElement.addEventListener('pointerdown',e=>{drag=true;lx=e.clientX;ly=e.clientY});
-renderer.domElement.addEventListener('pointermove',e=>{if(!drag)return;ty+=(e.clientX-lx)*.004;tx+=(e.clientY-ly)*.004;tx=Math.max(-.65,Math.min(.65,tx));lx=e.clientX;ly=e.clientY});
+renderer.domElement.addEventListener('pointermove',e=>{if(!drag)return;ty+=(e.clientX-lx)*.004;tx+=(e.clientY-ly)*.004;tx=Math.max(-.85,Math.min(.85,tx));lx=e.clientX;ly=e.clientY});
 renderer.domElement.addEventListener('pointerup',()=>drag=false);
+renderer.domElement.addEventListener('pointercancel',()=>drag=false);
 
 const clock=new THREE.Clock();
 function animate(){
- requestAnimationFrame(animate);
- const t=clock.getElapsedTime();
- if(analyser&&currentSource){
-   analyser.getByteFrequencyData(freq);
-   const b=band(35,190),m=band(190,2200),h=band(2200,12000),e=b*.50+m*.34+h*.16;
-   smBass+=(b-smBass)*.18;smMid+=(m-smMid)*.13;smHigh+=(h-smHigh)*.14;smEnergy+=(e-smEnergy)*.15;
- }else{
-   smBass+=(.008-smBass)*.03;smMid+=(.007-smMid)*.03;smHigh+=(.006-smHigh)*.03;smEnergy+=(.006-smEnergy)*.03;
- }
- uniforms.uTime.value=t;uniforms.uBass.value=smBass;uniforms.uMid.value=smMid;uniforms.uHigh.value=smHigh;uniforms.uEnergy.value=smEnergy;
- rx+=(tx-rx)*.055;ry+=(ty-ry)*.055;root.rotation.x=rx;root.rotation.y=ry+t*.033;root.rotation.z=Math.sin(t*.16)*.012;
- const safeScale=mobile?BASE_SCALE-Math.min(smEnergy,.75)*.09:1;
- const currentScale=root.scale.x+(safeScale-root.scale.x)*.10;
- root.scale.setScalar(currentScale);
- renderer.render(scene,camera);
+  requestAnimationFrame(animate);
+  const t=clock.getElapsedTime();
+  if(analyser&&currentSource){
+    analyser.getByteFrequencyData(freq);
+    const b=band(35,190),m=band(190,2200),h=band(2200,12000),e=b*.50+m*.34+h*.16;
+    smBass+=(b-smBass)*.18;smMid+=(m-smMid)*.13;smHigh+=(h-smHigh)*.14;smEnergy+=(e-smEnergy)*.15;
+  }else{
+    smBass+=(.006-smBass)*.03;smMid+=(.005-smMid)*.03;smHigh+=(.004-smHigh)*.03;smEnergy+=(.004-smEnergy)*.03;
+  }
+
+  uniforms.uTime.value=t;uniforms.uBass.value=smBass;uniforms.uMid.value=smMid;uniforms.uHigh.value=smHigh;uniforms.uEnergy.value=smEnergy;
+  rx+=(tx-rx)*.055;ry+=(ty-ry)*.055;
+  root.rotation.x=rx;
+  root.rotation.y=ry+t*.055;
+  const safeScale=mobile?BASE_SCALE-Math.min(smEnergy,.75)*.055:BASE_SCALE;
+  const s=root.scale.x+(safeScale-root.scale.x)*.10;
+  root.scale.setScalar(s);
+  renderer.render(scene,camera);
 }
 animate();
-addEventListener('resize',()=>{camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight);renderer.setPixelRatio(Math.min(devicePixelRatio,2));uniforms.uPixelRatio.value=Math.min(devicePixelRatio,2)});
+
+addEventListener('resize',()=>{
+  camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight);renderer.setPixelRatio(Math.min(devicePixelRatio,2));uniforms.uPixelRatio.value=Math.min(devicePixelRatio,2);
+});
 </script>
 </body>
 </html>
