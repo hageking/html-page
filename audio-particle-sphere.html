@@ -10,7 +10,7 @@
 *{box-sizing:border-box}
 html,body{width:100%;height:100%;margin:0;overflow:hidden;background:var(--bg)}
 body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Inter,sans-serif;color:#eee;-webkit-tap-highlight-color:transparent;touch-action:none;background:radial-gradient(circle at 50% 25%,rgba(40,70,120,.045),transparent 28%),#111010}
-#stage{position:fixed;inset:0;z-index:1}
+#stage{position:fixed;inset:0;z-index:1;overflow:hidden}
 #stage canvas{display:block;width:100%;height:100%}
 #file,#media{display:none}
 .ui{position:fixed;inset:0;z-index:5;pointer-events:none}
@@ -59,6 +59,8 @@ root.position.y=0.70;
 scene.add(root);
 
 const mobile=innerWidth<700;
+const BASE_SCALE=mobile?.86:1;
+root.scale.setScalar(BASE_SCALE);
 const count=mobile?1650:3000;
 const geo=new THREE.BufferGeometry();
 const pos=new Float32Array(count*3),dirs=new Float32Array(count*3),radii=new Float32Array(count),randoms=new Float32Array(count),phases=new Float32Array(count),colors=new Float32Array(count*3);
@@ -68,8 +70,7 @@ for(let i=0;i<count;i++){
   dirs[j]=q*Math.cos(a);dirs[j+1]=z;dirs[j+2]=q*Math.sin(a);
   radii[i]=Math.random()<.93?.925+Math.random()*.075:.62+Math.random()*.16;
   randoms[i]=Math.random();phases[i]=Math.random()*Math.PI*2;
-  let idx=Math.floor(Math.random()*palette.length);if(Math.random()<.10)idx=0;
-  const c=new THREE.Color(palette[idx]);colors[j]=c.r;colors[j+1]=c.g;colors[j+2]=c.b;
+  const c=new THREE.Color(0xffffff);colors[j]=c.r;colors[j+1]=c.g;colors[j+2]=c.b;
 }
 geo.setAttribute('position',new THREE.BufferAttribute(pos,3));
 geo.setAttribute('aDir',new THREE.BufferAttribute(dirs,3));
@@ -113,8 +114,7 @@ void main(){
  float core=1.0-smoothstep(0.0,.16,d);
  float alpha=edge*(.40+vRand*.24+min(vEnergy,.8)*.10);
  if(alpha<.015)discard;
- vec3 c=vec3(1.0);
- gl_FragColor=vec4(c,alpha);
+ gl_FragColor=vec4(vec3(1.0),alpha);
 }`
 });
 const particles=new THREE.Points(geo,material);root.add(particles);
@@ -141,7 +141,23 @@ renderer.domElement.addEventListener('pointermove',e=>{if(!drag)return;ty+=(e.cl
 renderer.domElement.addEventListener('pointerup',()=>drag=false);
 
 const clock=new THREE.Clock();
-function animate(){requestAnimationFrame(animate);const t=clock.getElapsedTime();if(analyser&&currentSource){analyser.getByteFrequencyData(freq);const b=band(35,190),m=band(190,2200),h=band(2200,12000),e=b*.50+m*.34+h*.16;smBass+=(b-smBass)*.18;smMid+=(m-smMid)*.13;smHigh+=(h-smHigh)*.14;smEnergy+=(e-smEnergy)*.15}else{smBass+=(.008-smBass)*.03;smMid+=(.007-smMid)*.03;smHigh+=(.006-smHigh)*.03;smEnergy+=(.006-smEnergy)*.03}uniforms.uTime.value=t;uniforms.uBass.value=smBass;uniforms.uMid.value=smMid;uniforms.uHigh.value=smHigh;uniforms.uEnergy.value=smEnergy;rx+=(tx-rx)*.055;ry+=(ty-ry)*.055;root.rotation.x=rx;root.rotation.y=ry+t*.033;root.rotation.z=Math.sin(t*.16)*.012;renderer.render(scene,camera)}
+function animate(){
+ requestAnimationFrame(animate);
+ const t=clock.getElapsedTime();
+ if(analyser&&currentSource){
+   analyser.getByteFrequencyData(freq);
+   const b=band(35,190),m=band(190,2200),h=band(2200,12000),e=b*.50+m*.34+h*.16;
+   smBass+=(b-smBass)*.18;smMid+=(m-smMid)*.13;smHigh+=(h-smHigh)*.14;smEnergy+=(e-smEnergy)*.15;
+ }else{
+   smBass+=(.008-smBass)*.03;smMid+=(.007-smMid)*.03;smHigh+=(.006-smHigh)*.03;smEnergy+=(.006-smEnergy)*.03;
+ }
+ uniforms.uTime.value=t;uniforms.uBass.value=smBass;uniforms.uMid.value=smMid;uniforms.uHigh.value=smHigh;uniforms.uEnergy.value=smEnergy;
+ rx+=(tx-rx)*.055;ry+=(ty-ry)*.055;root.rotation.x=rx;root.rotation.y=ry+t*.033;root.rotation.z=Math.sin(t*.16)*.012;
+ const safeScale=mobile?BASE_SCALE-Math.min(smEnergy,.75)*.09:1;
+ const currentScale=root.scale.x+(safeScale-root.scale.x)*.10;
+ root.scale.setScalar(currentScale);
+ renderer.render(scene,camera);
+}
 animate();
 addEventListener('resize',()=>{camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight);renderer.setPixelRatio(Math.min(devicePixelRatio,2));uniforms.uPixelRatio.value=Math.min(devicePixelRatio,2)});
 </script>
