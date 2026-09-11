@@ -62,7 +62,7 @@ const mobile=innerWidth<700;
 const count=mobile?1650:3000;
 const geo=new THREE.BufferGeometry();
 const pos=new Float32Array(count*3),dirs=new Float32Array(count*3),radii=new Float32Array(count),randoms=new Float32Array(count),phases=new Float32Array(count),colors=new Float32Array(count*3);
-const palette=[0xdffcff,0x78eaff,0x68baff,0x8f8bff,0xbd79ff,0xf08bd8];
+const palette=[0xffffff];
 for(let i=0;i<count;i++){
   const z=Math.random()*2-1,a=Math.random()*Math.PI*2,q=Math.sqrt(1-z*z),j=i*3;
   dirs[j]=q*Math.cos(a);dirs[j+1]=z;dirs[j+2]=q*Math.sin(a);
@@ -113,7 +113,7 @@ void main(){
  float core=1.0-smoothstep(0.0,.16,d);
  float alpha=edge*(.40+vRand*.24+min(vEnergy,.8)*.10);
  if(alpha<.015)discard;
- vec3 c=mix(vColor,vec3(1.0),core*.16);
+ vec3 c=vec3(1.0);
  gl_FragColor=vec4(c,alpha);
 }`
 });
