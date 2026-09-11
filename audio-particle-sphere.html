@@ -6,115 +6,144 @@
 <meta name="theme-color" content="#111010">
 <title>Voice Particle Sphere</title>
 <style>
-:root{color-scheme:dark;--bg:#111010;--energy:0}
+:root{color-scheme:dark;--bg:#111010}
 *{box-sizing:border-box}
 html,body{width:100%;height:100%;margin:0;overflow:hidden;background:var(--bg)}
-body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Inter,sans-serif;color:#eee;-webkit-tap-highlight-color:transparent;touch-action:none;background:radial-gradient(circle at 50% 29%,rgba(62,98,150,.055),transparent 26%),radial-gradient(circle at 50% 100%,rgba(128,65,145,.035),transparent 34%),#111010}
-body:before{content:"";position:fixed;inset:0;pointer-events:none;background:radial-gradient(ellipse at center,transparent 48%,rgba(0,0,0,.23) 100%)}
-.visual{position:fixed;z-index:1;top:clamp(105px,14.5vh,155px);left:50%;transform:translateX(-50%);width:clamp(150px,40vw,185px);aspect-ratio:1;pointer-events:auto}
-#stage{position:absolute;inset:0;z-index:2}
+body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Inter,sans-serif;color:#eee;-webkit-tap-highlight-color:transparent;touch-action:none;background:radial-gradient(circle at 50% 25%,rgba(40,70,120,.045),transparent 28%),#111010}
+#stage{position:fixed;inset:0;z-index:1}
 #stage canvas{display:block;width:100%;height:100%}
-.aurora{position:absolute;z-index:1;inset:14%;border-radius:50%;pointer-events:none;filter:blur(22px);opacity:calc(.12 + var(--energy)*.22);transform:scale(calc(.96 + var(--energy)*.11));transition:opacity .08s linear;background:conic-gradient(from 40deg,rgba(83,224,255,.36),rgba(86,120,255,.18),rgba(178,97,255,.30),rgba(255,105,207,.22),rgba(83,224,255,.36));animation:auroraSpin 11s linear infinite}
 #file,#media{display:none}
 .ui{position:fixed;inset:0;z-index:5;pointer-events:none}
-.prompt{position:absolute;left:50%;bottom:17.2%;transform:translateX(-50%);pointer-events:auto;border:0;padding:12px 20px;background:linear-gradient(90deg,#5ae5f4 0%,#72bfff 42%,#a884ff 73%,#d888ff 100%);-webkit-background-clip:text;background-clip:text;color:transparent;font:600 clamp(17px,4.5vw,21px)/1.2 -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;letter-spacing:-.025em;white-space:nowrap;cursor:pointer;text-shadow:0 0 22px rgba(95,200,255,.08)}
-.prompt.listening{animation:promptPulse 1.7s ease-in-out infinite}
-.controls{position:absolute;left:50%;bottom:max(4.5%,env(safe-area-inset-bottom));transform:translateX(-50%);display:flex;align-items:center;gap:34px;pointer-events:auto}
-.circle{position:relative;width:58px;height:58px;border-radius:50%;border:1px solid rgba(255,255,255,.035);background:rgba(38,37,37,.93);display:grid;place-items:center;color:#d8d8d8;cursor:pointer;box-shadow:inset 0 1px 0 rgba(255,255,255,.025),0 8px 28px rgba(0,0,0,.12);transition:transform .14s ease,background .2s ease,color .2s ease,box-shadow .2s ease}
+.prompt{position:absolute;left:50%;bottom:17.2%;transform:translateX(-50%);pointer-events:auto;border:0;padding:12px 20px;background:linear-gradient(90deg,#5fe5f2,#72c4ff 44%,#a985ff 76%,#dd8bff);-webkit-background-clip:text;background-clip:text;color:transparent;font:600 clamp(17px,4.5vw,21px)/1.2 -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;letter-spacing:-.025em;white-space:nowrap;cursor:pointer}
+.prompt.listening{animation:pulse 1.7s ease-in-out infinite}
+.controls{position:absolute;left:50%;bottom:max(4.5%,env(safe-area-inset-bottom));transform:translateX(-50%);display:flex;gap:34px;pointer-events:auto}
+.circle{position:relative;width:58px;height:58px;border-radius:50%;border:1px solid rgba(255,255,255,.045);background:rgba(38,37,37,.95);display:grid;place-items:center;color:#d8d8d8;cursor:pointer;box-shadow:inset 0 1px 0 rgba(255,255,255,.025);transition:transform .14s ease,background .2s ease,color .2s ease}
 .circle:active{transform:scale(.93)}
-.circle svg{width:23px;height:23px;display:block}
-.circle.close svg{width:22px;height:22px}
-.circle.mic:after{content:"";position:absolute;inset:-1px;border-radius:inherit;padding:1px;background:linear-gradient(135deg,rgba(65,223,239,.35),rgba(98,145,255,.18) 45%,rgba(198,100,255,.38));-webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);-webkit-mask-composite:xor;mask-composite:exclude;opacity:.35;pointer-events:none}
-.circle.mic.active{color:#ecfbff;background:rgba(31,40,43,.96);box-shadow:0 0 0 1px rgba(88,220,240,.12),0 0 28px rgba(103,147,255,.12)}
-.circle.mic.active:after{opacity:1;animation:ringPulse 1.5s ease-in-out infinite}
-#status{position:absolute;left:50%;bottom:13.4%;transform:translateX(-50%);max-width:80vw;overflow:hidden;text-overflow:ellipsis;font-size:10px;color:rgba(255,255,255,.30);white-space:nowrap;opacity:0;transition:opacity .2s}
+.circle svg{width:23px;height:23px}.circle.close svg{width:22px;height:22px}
+.circle.mic:after{content:"";position:absolute;inset:-1px;border-radius:50%;padding:1px;background:linear-gradient(135deg,rgba(74,231,241,.42),rgba(111,142,255,.20) 46%,rgba(206,107,255,.42));-webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);-webkit-mask-composite:xor;mask-composite:exclude;opacity:.35;pointer-events:none}
+.circle.mic.active{color:#effcff;background:#20292b}.circle.mic.active:after{opacity:1}
+#status{position:absolute;left:50%;bottom:13.4%;transform:translateX(-50%);font-size:10px;color:rgba(255,255,255,.3);white-space:nowrap;opacity:0;transition:.2s;max-width:80vw;overflow:hidden;text-overflow:ellipsis}
 #status.show{opacity:1}
-.drop{position:fixed;z-index:4;inset:13px;border:1px solid rgba(98,210,255,.24);border-radius:26px;opacity:0;pointer-events:none;transition:opacity .16s}
-body.drag .drop{opacity:1}
-@keyframes auroraSpin{to{transform:rotate(360deg) scale(calc(.96 + var(--energy)*.11))}}
-@keyframes promptPulse{0%,100%{opacity:.64}50%{opacity:1}}
-@keyframes ringPulse{0%,100%{filter:brightness(.9)}50%{filter:brightness(1.5)}}
-@media(max-height:650px){.visual{top:11vh;width:145px}.prompt{bottom:18.5%}.controls{bottom:4%}}
+@keyframes pulse{0%,100%{opacity:.68}50%{opacity:1}}
 </style>
 </head>
 <body>
-<div class="visual"><div class="aurora"></div><div id="stage"></div></div>
-<div class="drop"></div>
+<div id="stage"></div>
 <input id="file" type="file" accept="video/*,audio/*">
 <video id="media" playsinline preload="metadata"></video>
 <div class="ui">
-  <button id="prompt" class="prompt" aria-label="動画または音声を選択">Say something...</button>
-  <div id="status">Tap the text to choose audio or video</div>
+  <button id="prompt" class="prompt">Say something...</button>
+  <div id="status"></div>
   <div class="controls">
-    <button id="close" class="circle close" aria-label="停止してリセット">
-      <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M5 5l14 14M19 5L5 19" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
-    </button>
-    <button id="mic" class="circle mic" aria-label="マイク入力">
-      <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><rect x="8.2" y="3" width="7.6" height="12" rx="3.8" stroke="currentColor" stroke-width="1.7"/><path d="M5.5 11.5a6.5 6.5 0 0013 0M12 18v3M8.5 21h7" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>
-    </button>
+    <button id="close" class="circle close" aria-label="停止"><svg viewBox="0 0 24 24" fill="none"><path d="M5 5l14 14M19 5L5 19" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></button>
+    <button id="mic" class="circle mic" aria-label="マイク"><svg viewBox="0 0 24 24" fill="none"><rect x="8.2" y="3" width="7.6" height="12" rx="3.8" stroke="currentColor" stroke-width="1.7"/><path d="M5.5 11.5a6.5 6.5 0 0013 0M12 18v3M8.5 21h7" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg></button>
   </div>
 </div>
 <script type="module">
 import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.186.0/build/three.module.js';
 const $=id=>document.getElementById(id);
 const stage=$('stage'),file=$('file'),media=$('media'),promptBtn=$('prompt'),micBtn=$('mic'),closeBtn=$('close'),status=$('status');
+
 const scene=new THREE.Scene();
-const camera=new THREE.PerspectiveCamera(42,1,.1,50);camera.position.z=5.8;
-const renderer=new THREE.WebGLRenderer({antialias:true,alpha:true,powerPreference:'high-performance'});renderer.setPixelRatio(Math.min(devicePixelRatio,2));renderer.setClearColor(0x000000,0);stage.appendChild(renderer.domElement);
-const root=new THREE.Group();scene.add(root);
-const mobile=innerWidth<700,count=mobile?6200:10500;
-const geo=new THREE.BufferGeometry(),pos=new Float32Array(count*3),dirs=new Float32Array(count*3),radii=new Float32Array(count),randoms=new Float32Array(count),phases=new Float32Array(count),colors=new Float32Array(count*3);
-const palette=[0xeafdff,0x72eaff,0x67b8ff,0x9881ff,0xc67cff,0xff8bd5];
+scene.background=new THREE.Color(0x111010);
+const camera=new THREE.PerspectiveCamera(44,innerWidth/innerHeight,.1,100);
+camera.position.z=8.4;
+const renderer=new THREE.WebGLRenderer({antialias:true,alpha:false,powerPreference:'high-performance'});
+renderer.setPixelRatio(Math.min(devicePixelRatio,2));
+renderer.setSize(innerWidth,innerHeight);
+renderer.setClearColor(0x111010,1);
+stage.appendChild(renderer.domElement);
+
+const root=new THREE.Group();
+root.position.y=2.10;
+scene.add(root);
+
+const mobile=innerWidth<700;
+const count=mobile?1650:3000;
+const geo=new THREE.BufferGeometry();
+const pos=new Float32Array(count*3),dirs=new Float32Array(count*3),radii=new Float32Array(count),randoms=new Float32Array(count),phases=new Float32Array(count),colors=new Float32Array(count*3);
+const palette=[0xdffcff,0x78eaff,0x68baff,0x8f8bff,0xbd79ff,0xf08bd8];
 for(let i=0;i<count;i++){
   const z=Math.random()*2-1,a=Math.random()*Math.PI*2,q=Math.sqrt(1-z*z),j=i*3;
   dirs[j]=q*Math.cos(a);dirs[j+1]=z;dirs[j+2]=q*Math.sin(a);
-  radii[i]=Math.random()<.74?.82+Math.random()*.18:.38+Math.pow(Math.random(),.58)*.51;
+  radii[i]=Math.random()<.93?.925+Math.random()*.075:.62+Math.random()*.16;
   randoms[i]=Math.random();phases[i]=Math.random()*Math.PI*2;
-  let idx=Math.floor(Math.random()*palette.length);if(Math.random()<.20)idx=0;
+  let idx=Math.floor(Math.random()*palette.length);if(Math.random()<.10)idx=0;
   const c=new THREE.Color(palette[idx]);colors[j]=c.r;colors[j+1]=c.g;colors[j+2]=c.b;
 }
-geo.setAttribute('position',new THREE.BufferAttribute(pos,3));geo.setAttribute('aDir',new THREE.BufferAttribute(dirs,3));geo.setAttribute('aRadius',new THREE.BufferAttribute(radii,1));geo.setAttribute('aRand',new THREE.BufferAttribute(randoms,1));geo.setAttribute('aPhase',new THREE.BufferAttribute(phases,1));geo.setAttribute('aColor',new THREE.BufferAttribute(colors,3));geo.boundingSphere=new THREE.Sphere(new THREE.Vector3(),4);
+geo.setAttribute('position',new THREE.BufferAttribute(pos,3));
+geo.setAttribute('aDir',new THREE.BufferAttribute(dirs,3));
+geo.setAttribute('aRadius',new THREE.BufferAttribute(radii,1));
+geo.setAttribute('aRand',new THREE.BufferAttribute(randoms,1));
+geo.setAttribute('aPhase',new THREE.BufferAttribute(phases,1));
+geo.setAttribute('aColor',new THREE.BufferAttribute(colors,3));
+geo.boundingSphere=new THREE.Sphere(new THREE.Vector3(),4);
+
 const uniforms={uTime:{value:0},uBass:{value:0},uMid:{value:0},uHigh:{value:0},uEnergy:{value:0},uPixelRatio:{value:Math.min(devicePixelRatio,2)}};
-const mat=new THREE.ShaderMaterial({uniforms,transparent:true,depthWrite:false,blending:THREE.AdditiveBlending,vertexShader:`
+const material=new THREE.ShaderMaterial({
+  uniforms,transparent:true,depthTest:true,depthWrite:false,blending:THREE.NormalBlending,
+  vertexShader:`
 attribute vec3 aDir;attribute float aRadius;attribute float aRand;attribute float aPhase;attribute vec3 aColor;
-uniform float uTime,uBass,uMid,uHigh,uEnergy,uPixelRatio;varying vec3 vColor;varying float vRand;varying float vEnergy;
+uniform float uTime,uBass,uMid,uHigh,uEnergy,uPixelRatio;
+varying vec3 vColor;varying float vRand;varying float vEnergy;
 void main(){
  vec3 n=normalize(aDir);float az=atan(n.z,n.x),el=asin(n.y);
  float bass=smoothstep(.025,.62,uBass),mid=smoothstep(.018,.52,uMid),high=smoothstep(.012,.42,uHigh);
- float breathe=.012*sin(uTime*.72+aPhase)+.008*sin(uTime*.44+az*2.0);
- float wave=sin(az*3.0+el*2.4-uTime*1.55+aPhase)*mid;
- float detail=sin(az*(7.0+floor(aRand*4.0))-el*5.0+uTime*(2.0+aRand*1.8)+aPhase)*high;
- float radius=1.72*aRadius*(1.0+breathe+.23*pow(bass,1.2));radius+=aRadius*(.15*wave+.055*detail);
- float burst=pow(max(0.0,high-.16),1.2)*(1.1+2.5*pow(aRand,5.0))*max(0.0,sin(aPhase+uTime*4.4));radius+=burst;
+ float breathe=.010*sin(uTime*.72+aPhase)+.006*sin(uTime*.43+az*2.0);
+ float wave=sin(az*3.1+el*2.4-uTime*1.55+aPhase)*mid;
+ float detail=sin(az*(7.0+floor(aRand*4.0))-el*5.0+uTime*(1.9+aRand*1.7)+aPhase)*high;
+ float radius=1.56*aRadius*(1.0+breathe+.20*pow(bass,1.2));
+ radius+=aRadius*(.13*wave+.04*detail);
+ float burst=pow(max(0.0,high-.18),1.25)*(0.75+1.8*pow(aRand,5.0))*max(0.0,sin(aPhase+uTime*4.2));
+ radius+=burst;
  vec3 tangent=normalize(cross(n,abs(n.y)>.9?vec3(1.,0.,0.):vec3(0.,1.,0.)));
- vec3 p=n*radius+tangent*(.035*detail+.018*sin(aPhase+uTime*.8));
- vec4 mv=modelViewMatrix*vec4(p,1.0);float perspective=27.0/max(3.5,-mv.z);
- gl_PointSize=(.82+aRand*1.28+high*(.45+aRand*.82))*uPixelRatio*perspective;gl_Position=projectionMatrix*mv;
+ vec3 p=n*radius+tangent*(.025*detail+.012*sin(aPhase+uTime*.7));
+ vec4 mv=modelViewMatrix*vec4(p,1.0);
+ float perspective=31.0/max(4.0,-mv.z);
+ gl_PointSize=(1.05+aRand*.85+high*(.30+aRand*.44))*uPixelRatio*perspective;
+ gl_Position=projectionMatrix*mv;
  vColor=aColor;vRand=aRand;vEnergy=uEnergy;
 }`,
-fragmentShader:`
+  fragmentShader:`
 precision highp float;varying vec3 vColor;varying float vRand;varying float vEnergy;
-void main(){vec2 q=gl_PointCoord-.5;float d=length(q);if(d>.5)discard;float halo=smoothstep(.5,.08,d);float core=smoothstep(.17,0.0,d);vec3 c=mix(vColor,vec3(1.0),core*.42+min(vEnergy*.14,.12));float alpha=halo*(.19+vRand*.26)+core*(.45+min(vEnergy,.8)*.24);gl_FragColor=vec4(c,alpha);}`});
-const particles=new THREE.Points(geo,mat);root.add(particles);
-const dustCount=mobile?180:320,dustGeo=new THREE.BufferGeometry(),dustPos=new Float32Array(dustCount*3),dustCol=new Float32Array(dustCount*3);
-for(let i=0;i<dustCount;i++){const a=Math.random()*Math.PI*2,r=1.55+Math.random()*.58,j=i*3;dustPos[j]=Math.cos(a)*r;dustPos[j+1]=(Math.random()*2-1)*1.45;dustPos[j+2]=Math.sin(a)*r*.7;const c=new THREE.Color(palette[1+Math.floor(Math.random()*(palette.length-1))]);dustCol[j]=c.r;dustCol[j+1]=c.g;dustCol[j+2]=c.b}
-dustGeo.setAttribute('position',new THREE.BufferAttribute(dustPos,3));dustGeo.setAttribute('color',new THREE.BufferAttribute(dustCol,3));const dust=new THREE.Points(dustGeo,new THREE.PointsMaterial({size:.018,vertexColors:true,transparent:true,opacity:.24,depthWrite:false,blending:THREE.AdditiveBlending}));root.add(dust);
-let audioCtx=null,analyser=null,freq=null,mediaSource=null,currentSource=null,micStream=null,objectUrl=null,smBass=0,smMid=0,smHigh=0,smEnergy=0;
-function showStatus(text,ms=1800){status.textContent=text;status.classList.add('show');clearTimeout(showStatus.t);showStatus.t=setTimeout(()=>status.classList.remove('show'),ms)}
+void main(){
+ vec2 p=gl_PointCoord-vec2(.5);float d=length(p);
+ if(d>=.49)discard;
+ float edge=1.0-smoothstep(.20,.49,d);
+ float core=1.0-smoothstep(0.0,.16,d);
+ float alpha=edge*(.40+vRand*.24+min(vEnergy,.8)*.10);
+ if(alpha<.015)discard;
+ vec3 c=mix(vColor,vec3(1.0),core*.16);
+ gl_FragColor=vec4(c,alpha);
+}`
+});
+const particles=new THREE.Points(geo,material);root.add(particles);
+
+let audioCtx,analyser,freq,mediaSource,currentSource,micStream,objectUrl;
+let smBass=0,smMid=0,smHigh=0,smEnergy=0;
+function showStatus(t,ms=1600){status.textContent=t;status.classList.add('show');clearTimeout(showStatus.t);showStatus.t=setTimeout(()=>status.classList.remove('show'),ms)}
 function ensureAudio(){if(!audioCtx){audioCtx=new(window.AudioContext||window.webkitAudioContext)();analyser=audioCtx.createAnalyser();analyser.fftSize=1024;analyser.smoothingTimeConstant=.76;freq=new Uint8Array(analyser.frequencyBinCount)}if(audioCtx.state==='suspended')audioCtx.resume()}
-function disconnectCurrent(){try{currentSource?.disconnect()}catch{}currentSource=null;if(micStream){micStream.getTracks().forEach(t=>t.stop());micStream=null}}
-function band(lo,hi){if(!analyser||!freq)return 0;const ny=audioCtx.sampleRate/2,a=Math.max(0,Math.floor(lo/ny*freq.length)),b=Math.min(freq.length-1,Math.ceil(hi/ny*freq.length));let s=0,n=0;for(let i=a;i<=b;i++){s+=freq[i];n++}return n?s/n/255:0}
-function connectMedia(){ensureAudio();disconnectCurrent();if(!mediaSource)mediaSource=audioCtx.createMediaElementSource(media);currentSource=mediaSource;mediaSource.connect(analyser);mediaSource.connect(audioCtx.destination)}
-async function startMic(){try{ensureAudio();disconnectCurrent();media.pause();micStream=await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:true,noiseSuppression:true,autoGainControl:true}});currentSource=audioCtx.createMediaStreamSource(micStream);currentSource.connect(analyser);micBtn.classList.add('active');promptBtn.classList.add('listening');promptBtn.textContent='Listening...';showStatus('Microphone active')}catch(e){showStatus('マイクを利用できません',2500)}}
-function stopAll(clearMedia=false){disconnectCurrent();media.pause();micBtn.classList.remove('active');promptBtn.classList.remove('listening');promptBtn.textContent='Say something...';smBass=smMid=smHigh=smEnergy=0;if(clearMedia){media.removeAttribute('src');media.load();if(objectUrl){URL.revokeObjectURL(objectUrl);objectUrl=null}}}
+function disconnect(){try{currentSource?.disconnect()}catch{}currentSource=null;if(micStream){micStream.getTracks().forEach(t=>t.stop());micStream=null}}
+function band(lo,hi){if(!analyser)return 0;const ny=audioCtx.sampleRate/2,a=Math.floor(lo/ny*freq.length),b=Math.min(freq.length-1,Math.ceil(hi/ny*freq.length));let s=0,n=0;for(let i=a;i<=b;i++){s+=freq[i];n++}return n?s/n/255:0}
+function connectMedia(){ensureAudio();disconnect();if(!mediaSource)mediaSource=audioCtx.createMediaElementSource(media);currentSource=mediaSource;mediaSource.connect(analyser);mediaSource.connect(audioCtx.destination)}
+async function startMic(){try{ensureAudio();disconnect();media.pause();micStream=await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:true,noiseSuppression:true,autoGainControl:true}});currentSource=audioCtx.createMediaStreamSource(micStream);currentSource.connect(analyser);micBtn.classList.add('active');promptBtn.classList.add('listening');promptBtn.textContent='Listening...';showStatus('Microphone active')}catch{showStatus('マイクを利用できません',2300)}}
+function stopAll(clear=false){disconnect();media.pause();micBtn.classList.remove('active');promptBtn.classList.remove('listening');promptBtn.textContent='Say something...';smBass=smMid=smHigh=smEnergy=0;if(clear){media.removeAttribute('src');media.load();if(objectUrl){URL.revokeObjectURL(objectUrl);objectUrl=null}}}
 function loadFile(f){if(!f)return;stopAll(true);ensureAudio();objectUrl=URL.createObjectURL(f);media.src=objectUrl;media.load();connectMedia();promptBtn.textContent='Listening...';promptBtn.classList.add('listening');showStatus(f.name,2200);media.play().catch(()=>{promptBtn.textContent='Tap to play';promptBtn.classList.remove('listening')})}
-promptBtn.addEventListener('click',()=>{if(media.src&&media.paused&&!micStream){ensureAudio();media.play();promptBtn.textContent='Listening...';promptBtn.classList.add('listening');return}file.click()});file.addEventListener('change',()=>loadFile(file.files?.[0]));media.addEventListener('ended',()=>{promptBtn.textContent='Say something...';promptBtn.classList.remove('listening')});micBtn.addEventListener('click',()=>micStream?stopAll(false):startMic());closeBtn.addEventListener('click',()=>stopAll(true));
-document.addEventListener('dragover',e=>{e.preventDefault();document.body.classList.add('drag')});document.addEventListener('dragleave',()=>document.body.classList.remove('drag'));document.addEventListener('drop',e=>{e.preventDefault();document.body.classList.remove('drag');loadFile(e.dataTransfer.files?.[0])});
-let dragging=false,lastX=0,lastY=0,targetX=-.05,targetY=0,rotX=-.05,rotY=0;renderer.domElement.addEventListener('pointerdown',e=>{dragging=true;lastX=e.clientX;lastY=e.clientY;renderer.domElement.setPointerCapture(e.pointerId)});renderer.domElement.addEventListener('pointermove',e=>{if(!dragging)return;targetY+=(e.clientX-lastX)*.006;targetX+=(e.clientY-lastY)*.006;targetX=Math.max(-.75,Math.min(.75,targetX));lastX=e.clientX;lastY=e.clientY});renderer.domElement.addEventListener('pointerup',()=>dragging=false);
+promptBtn.onclick=()=>{if(media.src&&media.paused&&!micStream){ensureAudio();media.play();promptBtn.textContent='Listening...';promptBtn.classList.add('listening')}else file.click()};
+file.onchange=()=>loadFile(file.files?.[0]);
+micBtn.onclick=()=>micStream?stopAll():startMic();
+closeBtn.onclick=()=>stopAll(true);
+media.onended=()=>{promptBtn.textContent='Say something...';promptBtn.classList.remove('listening')};
+
+let drag=false,lx=0,ly=0,tx=-.03,ty=0,rx=-.03,ry=0;
+renderer.domElement.addEventListener('pointerdown',e=>{drag=true;lx=e.clientX;ly=e.clientY});
+renderer.domElement.addEventListener('pointermove',e=>{if(!drag)return;ty+=(e.clientX-lx)*.004;tx+=(e.clientY-ly)*.004;tx=Math.max(-.65,Math.min(.65,tx));lx=e.clientX;ly=e.clientY});
+renderer.domElement.addEventListener('pointerup',()=>drag=false);
+
 const clock=new THREE.Clock();
-function animate(){requestAnimationFrame(animate);const t=clock.getElapsedTime();if(analyser&&currentSource){analyser.getByteFrequencyData(freq);const bass=band(35,190),mid=band(190,2400),high=band(2400,12000),energy=bass*.48+mid*.35+high*.17;smBass+=(bass-smBass)*.18;smMid+=(mid-smMid)*.13;smHigh+=(high-smHigh)*.14;smEnergy+=(energy-smEnergy)*.15}else{smBass+=(.012-smBass)*.03;smMid+=(.010-smMid)*.03;smHigh+=(.008-smHigh)*.03;smEnergy+=(.008-smEnergy)*.03}uniforms.uTime.value=t;uniforms.uBass.value=smBass;uniforms.uMid.value=smMid;uniforms.uHigh.value=smHigh;uniforms.uEnergy.value=smEnergy;document.documentElement.style.setProperty('--energy',Math.min(1,smEnergy*1.6).toFixed(3));rotX+=(targetX-rotX)*.055;rotY+=(targetY-rotY)*.055;root.rotation.x=rotX;root.rotation.y=rotY+t*.055;root.rotation.z=Math.sin(t*.2)*.018;dust.rotation.y=-t*.025;renderer.render(scene,camera)}
-function resize(){const r=stage.getBoundingClientRect(),w=Math.max(1,Math.floor(r.width)),h=Math.max(1,Math.floor(r.height));camera.aspect=w/h;camera.updateProjectionMatrix();renderer.setSize(w,h,false);renderer.setPixelRatio(Math.min(devicePixelRatio,2));uniforms.uPixelRatio.value=Math.min(devicePixelRatio,2)}
-resize();animate();addEventListener('resize',resize);
+function animate(){requestAnimationFrame(animate);const t=clock.getElapsedTime();if(analyser&&currentSource){analyser.getByteFrequencyData(freq);const b=band(35,190),m=band(190,2200),h=band(2200,12000),e=b*.50+m*.34+h*.16;smBass+=(b-smBass)*.18;smMid+=(m-smMid)*.13;smHigh+=(h-smHigh)*.14;smEnergy+=(e-smEnergy)*.15}else{smBass+=(.008-smBass)*.03;smMid+=(.007-smMid)*.03;smHigh+=(.006-smHigh)*.03;smEnergy+=(.006-smEnergy)*.03}uniforms.uTime.value=t;uniforms.uBass.value=smBass;uniforms.uMid.value=smMid;uniforms.uHigh.value=smHigh;uniforms.uEnergy.value=smEnergy;rx+=(tx-rx)*.055;ry+=(ty-ry)*.055;root.rotation.x=rx;root.rotation.y=ry+t*.033;root.rotation.z=Math.sin(t*.16)*.012;renderer.render(scene,camera)}
+animate();
+addEventListener('resize',()=>{camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight);renderer.setPixelRatio(Math.min(devicePixelRatio,2));uniforms.uPixelRatio.value=Math.min(devicePixelRatio,2)});
 </script>
 </body>
 </html>
