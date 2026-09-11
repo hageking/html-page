@@ -1,0 +1,500 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#03050b" />
+  <title>Audio Reactive Particle Ring</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #03050b;
+      --glass: rgba(8, 13, 28, .58);
+      --line: rgba(160, 200, 255, .16);
+      --text: rgba(238, 246, 255, .94);
+      --muted: rgba(216, 229, 255, .55);
+    }
+    * { box-sizing: border-box; }
+    html, body { width: 100%; height: 100%; margin: 0; overflow: hidden; background: var(--bg); }
+    body {
+      font-family: Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      color: var(--text);
+      touch-action: none;
+      background:
+        radial-gradient(circle at 50% 50%, rgba(32, 65, 132, .11), transparent 38%),
+        radial-gradient(circle at 24% 20%, rgba(99, 52, 180, .08), transparent 28%),
+        #03050b;
+    }
+    #stage { position: fixed; inset: 0; }
+    canvas { display: block; width: 100%; height: 100%; }
+    #vignette {
+      position: fixed; inset: 0; pointer-events: none;
+      background: radial-gradient(circle at 50% 48%, transparent 36%, rgba(0,0,0,.28) 68%, rgba(0,0,0,.7) 100%);
+      mix-blend-mode: multiply;
+    }
+    #grain {
+      position: fixed; inset: 0; pointer-events: none; opacity: .035;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 180 180' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.95' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.9'/%3E%3C/svg%3E");
+    }
+    .topbar {
+      position: fixed; top: max(18px, env(safe-area-inset-top)); left: 50%; transform: translateX(-50%);
+      width: min(760px, calc(100vw - 28px)); display: flex; align-items: center; justify-content: space-between;
+      gap: 14px; padding: 10px 12px 10px 16px; border: 1px solid var(--line); border-radius: 18px;
+      background: var(--glass); backdrop-filter: blur(18px) saturate(135%); -webkit-backdrop-filter: blur(18px) saturate(135%);
+      box-shadow: 0 18px 60px rgba(0,0,0,.28); z-index: 5; touch-action: auto;
+    }
+    .brand { min-width: 0; }
+    .brand strong { display: block; font-size: 12px; letter-spacing: .14em; font-weight: 650; text-transform: uppercase; }
+    .brand span { display: block; margin-top: 3px; font-size: 10px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .actions { display: flex; gap: 8px; flex: 0 0 auto; }
+    button {
+      appearance: none; border: 1px solid rgba(180, 212, 255, .18); border-radius: 12px; padding: 9px 12px;
+      background: rgba(255,255,255,.055); color: var(--text); font: inherit; font-size: 11px; font-weight: 650;
+      letter-spacing: .02em; cursor: pointer; transition: background .2s ease, transform .2s ease, border-color .2s ease;
+    }
+    button:hover { background: rgba(255,255,255,.1); border-color: rgba(182, 219, 255, .3); }
+    button:active { transform: scale(.97); }
+    button.primary { background: linear-gradient(135deg, rgba(68,139,255,.28), rgba(170,79,255,.24)); }
+    button:disabled { opacity: .38; cursor: default; }
+    #file { display: none; }
+    .bottom {
+      position: fixed; left: 50%; bottom: max(18px, env(safe-area-inset-bottom)); transform: translateX(-50%);
+      width: min(560px, calc(100vw - 28px)); z-index: 5; touch-action: auto;
+    }
+    .meter {
+      display: grid; grid-template-columns: 1fr auto; gap: 10px; align-items: center; padding: 10px 14px;
+      border: 1px solid var(--line); border-radius: 16px; background: rgba(8,13,28,.42);
+      backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); color: var(--muted); font-size: 10px;
+    }
+    .bars { height: 4px; border-radius: 999px; overflow: hidden; background: rgba(255,255,255,.06); }
+    #level { height: 100%; width: 4%; border-radius: inherit; background: linear-gradient(90deg, #62c5ff, #9b6dff, #ff74cc); box-shadow: 0 0 18px rgba(104,183,255,.55); transition: width .06s linear; }
+    .hint { margin-top: 8px; text-align: center; font-size: 9px; line-height: 1.5; color: rgba(210,226,255,.38); letter-spacing: .03em; }
+    #media {
+      position: fixed; right: 16px; bottom: 86px; width: min(240px, 44vw); max-height: 150px; border-radius: 12px;
+      border: 1px solid rgba(180,212,255,.14); background: #05070c; opacity: 0; pointer-events: none; transform: translateY(8px) scale(.98);
+      transition: opacity .25s ease, transform .25s ease; z-index: 4; touch-action: auto;
+    }
+    #media.visible { opacity: .78; pointer-events: auto; transform: none; }
+    @media (max-width: 620px) {
+      .topbar { align-items: stretch; }
+      .brand span { max-width: 132px; }
+      button { padding: 9px 10px; }
+      #media { width: 40vw; bottom: 92px; }
+    }
+  </style>
+</head>
+<body>
+  <div id="stage"></div>
+  <div id="vignette"></div>
+  <div id="grain"></div>
+
+  <div class="topbar">
+    <div class="brand">
+      <strong>Audio Particle Ring</strong>
+      <span id="status">動画または音声を選択してください</span>
+    </div>
+    <div class="actions">
+      <input id="file" type="file" accept="video/*,audio/*" />
+      <button id="pick" class="primary">動画 / 音声</button>
+      <button id="mic">マイク</button>
+      <button id="play" disabled>再生</button>
+    </div>
+  </div>
+
+  <video id="media" playsinline preload="metadata" controls></video>
+
+  <div class="bottom">
+    <div class="meter">
+      <div class="bars"><div id="level"></div></div>
+      <span id="readout">IDLE</span>
+    </div>
+    <div class="hint">ドラッグ / タッチで視点を動かせます。低音はリング半径、中音はねじれ、高音は粒子の散らばりに反映されます。</div>
+  </div>
+
+  <script type="module">
+    import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.186.0/build/three.module.js';
+
+    const stage = document.getElementById('stage');
+    const fileInput = document.getElementById('file');
+    const pickButton = document.getElementById('pick');
+    const micButton = document.getElementById('mic');
+    const playButton = document.getElementById('play');
+    const media = document.getElementById('media');
+    const status = document.getElementById('status');
+    const level = document.getElementById('level');
+    const readout = document.getElementById('readout');
+
+    const scene = new THREE.Scene();
+    scene.fog = new THREE.FogExp2(0x03050b, 0.038);
+
+    const camera = new THREE.PerspectiveCamera(48, innerWidth / innerHeight, 0.1, 100);
+    camera.position.set(0, 0.6, 13.2);
+
+    const renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: 'high-performance' });
+    renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+    renderer.setSize(innerWidth, innerHeight);
+    renderer.setClearColor(0x03050b, 1);
+    stage.appendChild(renderer.domElement);
+
+    const root = new THREE.Group();
+    root.rotation.x = -0.12;
+    scene.add(root);
+
+    const particleCount = innerWidth < 700 ? 14000 : 26000;
+    const geometry = new THREE.BufferGeometry();
+    const positions = new Float32Array(particleCount * 3);
+    const angles = new Float32Array(particleCount);
+    const tubes = new Float32Array(particleCount);
+    const randoms = new Float32Array(particleCount);
+
+    for (let i = 0; i < particleCount; i++) {
+      const r = Math.random();
+      angles[i] = Math.random() * Math.PI * 2;
+      tubes[i] = Math.random();
+      randoms[i] = r;
+    }
+
+    geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+    geometry.setAttribute('aAngle', new THREE.BufferAttribute(angles, 1));
+    geometry.setAttribute('aTube', new THREE.BufferAttribute(tubes, 1));
+    geometry.setAttribute('aRand', new THREE.BufferAttribute(randoms, 1));
+    geometry.boundingSphere = new THREE.Sphere(new THREE.Vector3(), 10);
+
+    const uniforms = {
+      uTime: { value: 0 },
+      uBass: { value: 0 },
+      uMid: { value: 0 },
+      uHigh: { value: 0 },
+      uEnergy: { value: 0 },
+      uPixelRatio: { value: Math.min(devicePixelRatio, 2) }
+    };
+
+    const material = new THREE.ShaderMaterial({
+      uniforms,
+      transparent: true,
+      depthWrite: false,
+      blending: THREE.AdditiveBlending,
+      vertexShader: `
+        attribute float aAngle;
+        attribute float aTube;
+        attribute float aRand;
+        uniform float uTime;
+        uniform float uBass;
+        uniform float uMid;
+        uniform float uHigh;
+        uniform float uEnergy;
+        uniform float uPixelRatio;
+        varying float vRand;
+        varying float vGlow;
+
+        void main() {
+          float bass = smoothstep(0.02, 0.95, uBass);
+          float mid = smoothstep(0.02, 0.85, uMid);
+          float high = smoothstep(0.015, 0.72, uHigh);
+          float theta = aAngle + uTime * (0.045 + 0.035 * high);
+          float tubePhase = aTube * 6.2831853
+            + uTime * (0.10 + 0.18 * mid)
+            + sin(aAngle * 4.0 - uTime * 0.45) * 0.35 * mid;
+
+          float bassPulse = pow(bass, 1.25);
+          float largeWave = sin(aAngle * 3.0 - uTime * 1.0) * mid;
+          float fineWave = sin(aAngle * (7.0 + floor(aRand * 5.0)) + uTime * (0.8 + aRand * 1.3)) * high;
+          float majorRadius = 4.55 + 1.65 * bassPulse + 0.16 * largeWave;
+          float minorRadius = 0.34 + 0.92 * aRand + 0.30 * mid;
+          float ripple = sin(aAngle * 9.0 - uTime * 1.7 + aRand * 6.2831853) * (0.08 + 0.34 * mid);
+
+          float radial = majorRadius + (minorRadius + ripple) * cos(tubePhase);
+          vec3 p;
+          p.x = radial * cos(theta);
+          p.z = radial * sin(theta);
+          p.y = (minorRadius + 0.16 * uEnergy) * sin(tubePhase)
+              + largeWave * (0.35 + aRand * 0.65)
+              + fineWave * (0.22 + aRand * 0.48);
+
+          vec3 outward = normalize(vec3(cos(theta), 0.16 * sin(tubePhase), sin(theta)));
+          p += outward * fineWave * (0.10 + 0.22 * aRand);
+          p.y += sin(theta * 2.0 + uTime * 0.35) * uEnergy * 0.16;
+
+          vec4 mv = modelViewMatrix * vec4(p, 1.0);
+          float size = 1.2 + aRand * 2.15 + high * (2.1 + aRand * 2.8) + bassPulse * 0.8;
+          gl_PointSize = size * uPixelRatio * (35.0 / max(4.0, -mv.z));
+          gl_Position = projectionMatrix * mv;
+
+          vRand = aRand;
+          vGlow = clamp(0.22 + uEnergy * 0.9 + high * 0.55, 0.0, 1.55);
+        }
+      `,
+      fragmentShader: `
+        precision highp float;
+        varying float vRand;
+        varying float vGlow;
+
+        void main() {
+          vec2 uv = gl_PointCoord - 0.5;
+          float d = length(uv);
+          if (d > 0.5) discard;
+
+          float halo = smoothstep(0.5, 0.0, d);
+          float core = smoothstep(0.16, 0.0, d);
+          vec3 cyan = vec3(0.28, 0.72, 1.0);
+          vec3 violet = vec3(0.72, 0.34, 1.0);
+          vec3 ice = vec3(0.82, 0.94, 1.0);
+          vec3 color = mix(cyan, violet, smoothstep(0.18, 0.94, vRand));
+          color = mix(color, ice, core * 0.72);
+
+          float alpha = halo * (0.14 + vGlow * 0.62) + core * 0.7;
+          gl_FragColor = vec4(color, alpha);
+        }
+      `
+    });
+
+    const particles = new THREE.Points(geometry, material);
+    root.add(particles);
+
+    const hazeMaterial = material.clone();
+    hazeMaterial.uniforms = uniforms;
+    const haze = new THREE.Points(geometry, hazeMaterial);
+    haze.scale.setScalar(1.018);
+    haze.rotation.z = 0.014;
+    haze.material.opacity = 0.25;
+    root.add(haze);
+
+    const dustCount = innerWidth < 700 ? 900 : 1600;
+    const dustPositions = new Float32Array(dustCount * 3);
+    for (let i = 0; i < dustCount; i++) {
+      const radius = 8 + Math.random() * 19;
+      const theta = Math.random() * Math.PI * 2;
+      const u = Math.random() * 2 - 1;
+      const s = Math.sqrt(1 - u * u);
+      dustPositions[i * 3] = radius * s * Math.cos(theta);
+      dustPositions[i * 3 + 1] = radius * u;
+      dustPositions[i * 3 + 2] = radius * s * Math.sin(theta);
+    }
+    const dustGeometry = new THREE.BufferGeometry();
+    dustGeometry.setAttribute('position', new THREE.BufferAttribute(dustPositions, 3));
+    const dust = new THREE.Points(dustGeometry, new THREE.PointsMaterial({
+      color: 0x7296d8,
+      size: innerWidth < 700 ? 0.022 : 0.028,
+      transparent: true,
+      opacity: 0.34,
+      depthWrite: false,
+      blending: THREE.AdditiveBlending
+    }));
+    scene.add(dust);
+
+    let audioContext = null;
+    let analyser = null;
+    let mediaSource = null;
+    let micSource = null;
+    let micStream = null;
+    let freq = null;
+    let mode = 'idle';
+    let objectUrl = null;
+
+    function ensureAudio() {
+      if (audioContext) return;
+      audioContext = new (window.AudioContext || window.webkitAudioContext)();
+      analyser = audioContext.createAnalyser();
+      analyser.fftSize = 1024;
+      analyser.smoothingTimeConstant = 0.82;
+      freq = new Uint8Array(analyser.frequencyBinCount);
+    }
+
+    function connectMediaOnce() {
+      ensureAudio();
+      if (!mediaSource) {
+        mediaSource = audioContext.createMediaElementSource(media);
+        mediaSource.connect(analyser);
+        mediaSource.connect(audioContext.destination);
+      }
+    }
+
+    function stopMic() {
+      if (micSource) {
+        try { micSource.disconnect(); } catch (_) {}
+        micSource = null;
+      }
+      if (micStream) {
+        micStream.getTracks().forEach(track => track.stop());
+        micStream = null;
+      }
+    }
+
+    pickButton.addEventListener('click', () => fileInput.click());
+
+    fileInput.addEventListener('change', async () => {
+      const file = fileInput.files?.[0];
+      if (!file) return;
+      stopMic();
+      mode = 'media';
+      if (objectUrl) URL.revokeObjectURL(objectUrl);
+      objectUrl = URL.createObjectURL(file);
+      media.src = objectUrl;
+      media.classList.toggle('visible', file.type.startsWith('video/'));
+      connectMediaOnce();
+      if (audioContext.state === 'suspended') await audioContext.resume();
+      status.textContent = file.name;
+      playButton.disabled = false;
+      playButton.textContent = '再生';
+      readout.textContent = 'READY';
+    });
+
+    playButton.addEventListener('click', async () => {
+      if (mode !== 'media') return;
+      ensureAudio();
+      if (audioContext.state === 'suspended') await audioContext.resume();
+      if (media.paused) {
+        try {
+          await media.play();
+          playButton.textContent = '停止';
+          readout.textContent = 'LIVE';
+        } catch (e) {
+          status.textContent = '再生を開始できませんでした';
+        }
+      } else {
+        media.pause();
+        playButton.textContent = '再生';
+        readout.textContent = 'PAUSE';
+      }
+    });
+
+    media.addEventListener('play', () => { if (mode === 'media') { playButton.textContent = '停止'; readout.textContent = 'LIVE'; } });
+    media.addEventListener('pause', () => { if (mode === 'media') { playButton.textContent = '再生'; readout.textContent = 'PAUSE'; } });
+    media.addEventListener('ended', () => { playButton.textContent = '再生'; readout.textContent = 'END'; });
+
+    micButton.addEventListener('click', async () => {
+      try {
+        ensureAudio();
+        if (audioContext.state === 'suspended') await audioContext.resume();
+        if (mode === 'mic') {
+          stopMic();
+          mode = 'idle';
+          micButton.textContent = 'マイク';
+          status.textContent = 'マイクを停止しました';
+          readout.textContent = 'IDLE';
+          return;
+        }
+        media.pause();
+        stopMic();
+        micStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        micSource = audioContext.createMediaStreamSource(micStream);
+        micSource.connect(analyser);
+        mode = 'mic';
+        micButton.textContent = '停止';
+        playButton.disabled = true;
+        media.classList.remove('visible');
+        status.textContent = 'マイク入力に反応中';
+        readout.textContent = 'MIC';
+      } catch (e) {
+        status.textContent = 'マイクを使用できません';
+        mode = 'idle';
+      }
+    });
+
+    const targetRotation = new THREE.Vector2(-0.12, 0);
+    const currentRotation = new THREE.Vector2(-0.12, 0);
+    let dragging = false;
+    let lastX = 0;
+    let lastY = 0;
+
+    function pointerDown(e) {
+      if (e.target.closest?.('.topbar, .bottom, #media')) return;
+      dragging = true;
+      lastX = e.clientX;
+      lastY = e.clientY;
+      renderer.domElement.setPointerCapture?.(e.pointerId);
+    }
+    function pointerMove(e) {
+      const nx = (e.clientX / innerWidth) * 2 - 1;
+      const ny = (e.clientY / innerHeight) * 2 - 1;
+      if (dragging) {
+        targetRotation.y += (e.clientX - lastX) * 0.006;
+        targetRotation.x += (e.clientY - lastY) * 0.006;
+        targetRotation.x = THREE.MathUtils.clamp(targetRotation.x, -1.15, 1.15);
+        lastX = e.clientX;
+        lastY = e.clientY;
+      } else {
+        targetRotation.y = nx * 0.34;
+        targetRotation.x = -0.12 + ny * 0.18;
+      }
+    }
+    function pointerUp() { dragging = false; }
+    window.addEventListener('pointerdown', pointerDown);
+    window.addEventListener('pointermove', pointerMove);
+    window.addEventListener('pointerup', pointerUp);
+    window.addEventListener('pointercancel', pointerUp);
+
+    let smoothBass = 0;
+    let smoothMid = 0;
+    let smoothHigh = 0;
+    let smoothEnergy = 0;
+
+    function averageBand(data, fromHz, toHz) {
+      if (!audioContext || !data) return 0;
+      const nyquist = audioContext.sampleRate / 2;
+      const from = Math.max(0, Math.floor(fromHz / nyquist * data.length));
+      const to = Math.min(data.length - 1, Math.ceil(toHz / nyquist * data.length));
+      if (to <= from) return 0;
+      let sum = 0;
+      for (let i = from; i <= to; i++) sum += data[i];
+      return sum / ((to - from + 1) * 255);
+    }
+
+    const timer = new THREE.Timer();
+
+    function animate() {
+      requestAnimationFrame(animate);
+      timer.update();
+      const t = timer.getElapsed();
+
+      let bass = 0.035 + Math.sin(t * 0.7) * 0.008;
+      let mid = 0.03 + Math.sin(t * 0.43 + 1.0) * 0.006;
+      let high = 0.025 + Math.sin(t * 0.91 + 2.0) * 0.006;
+
+      if (analyser && ((mode === 'media' && !media.paused) || mode === 'mic')) {
+        analyser.getByteFrequencyData(freq);
+        bass = averageBand(freq, 35, 220);
+        mid = averageBand(freq, 220, 2200);
+        high = averageBand(freq, 2200, 12000);
+      }
+
+      smoothBass += (bass - smoothBass) * 0.16;
+      smoothMid += (mid - smoothMid) * 0.11;
+      smoothHigh += (high - smoothHigh) * 0.13;
+      const energy = Math.min(1.25, smoothBass * 0.48 + smoothMid * 0.36 + smoothHigh * 0.42);
+      smoothEnergy += (energy - smoothEnergy) * 0.12;
+
+      uniforms.uTime.value = t;
+      uniforms.uBass.value = smoothBass * 1.45;
+      uniforms.uMid.value = smoothMid * 1.6;
+      uniforms.uHigh.value = smoothHigh * 2.0;
+      uniforms.uEnergy.value = smoothEnergy * 1.7;
+
+      currentRotation.lerp(targetRotation, 0.055);
+      root.rotation.x = currentRotation.x;
+      root.rotation.y = currentRotation.y + t * 0.018;
+      root.rotation.z = Math.sin(t * 0.16) * 0.035;
+      dust.rotation.y = -t * 0.007;
+      dust.rotation.x = Math.sin(t * 0.05) * 0.06;
+
+      const visualLevel = Math.min(100, Math.max(4, smoothEnergy * 180));
+      level.style.width = `${visualLevel}%`;
+      renderer.render(scene, camera);
+    }
+
+    animate();
+
+    window.addEventListener('resize', () => {
+      camera.aspect = innerWidth / innerHeight;
+      camera.updateProjectionMatrix();
+      renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+      renderer.setSize(innerWidth, innerHeight);
+      uniforms.uPixelRatio.value = Math.min(devicePixelRatio, 2);
+    });
+
+    document.addEventListener('visibilitychange', () => {
+      if (document.hidden && mode === 'media' && !media.paused) media.pause();
+    });
+  </script>
+</body>
+</html>
