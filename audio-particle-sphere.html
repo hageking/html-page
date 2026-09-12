@@ -33,7 +33,7 @@ canvas{position:fixed;inset:0;width:100%;height:100%;display:block;outline:none}
 <div class="label" id="label">Sphere</div>
 <div class="indicators" id="indicators"></div>
 <div class="hint">DRAG TO ROTATE</div>
-<div class="version">v2.1.0</div>
+<div class="version">v2.2.0</div>
 <script>
 (()=>{
 const canvas=document.getElementById('c'),ctx=canvas.getContext('2d',{alpha:false});
@@ -42,30 +42,142 @@ const menu=document.getElementById('menu'),panel=document.getElementById('panel'
 const TAU=Math.PI*2,RAD=Math.PI/180,N=2600;
 const names=['Sphere','Map','QR'];
 let W=0,H=0,DPR=1,scale=1,cx=0,cy=0,last=performance.now(),yaw=.1,pitch=-.08,roll=.06,yawV=0,pitchV=0,rollV=0,drag=false,px=0,py=0,downX=0,downY=0,moved=false,autoRotate=true;
-let current=0,next=0,morph=1,morphStart=0,MORPH_MS=1250;
+let current=0,next=0,morph=1,morphStart=0,MORPH_MS=1450;
+let beaconIndex=73,beaconStart=performance.now(),beaconCycle=3200,beaconSerial=0;
 let analyser=null,audioCtx=null,audioData=null,audioStream=null,audioOn=false,energy=0,bass=0,mid=0,high=0;
 const pts=Array.from({length:N},(_,i)=>({phase:((i*.61803398875)%1)*TAU,rnd:((i*73)%997)/997,shape:[]}));
+
 function resize(){W=innerWidth;H=innerHeight;DPR=Math.min(devicePixelRatio||1,2);canvas.width=Math.round(W*DPR);canvas.height=Math.round(H*DPR);ctx.setTransform(DPR,0,0,DPR,0,0);cx=W*.5;cy=H*(W<620?.445:.46);scale=Math.min(W*(W<620?.315:.23),H*(W<620?.235:.30));}
 addEventListener('resize',resize);resize();
+
 const golden=Math.PI*(3-Math.sqrt(5));
-for(let i=0;i<N;i++){const y=1-2*(i+.5)/N,rr=Math.sqrt(Math.max(0,1-y*y)),a=i*golden;pts[i].shape[0]=[rr*Math.cos(a),y,rr*Math.sin(a)];}
+for(let i=0;i<N;i++){
+  const y=1-2*(i+.5)/N,rr=Math.sqrt(Math.max(0,1-y*y)),a=i*golden;
+  pts[i].shape[0]=[rr*Math.cos(a),y,rr*Math.sin(a)];
+}
+
 const MAP_W=103,MAP_H=48,MAP_B64='AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABgAAAAAAAAAAAAAAAAcAAAAAAAAAAAAAAAADAAAAAAAAAAAAIAAAA8AAAAAAAAAAACAAAAPAAAAAAAAMABAAAAAD4AABgAAMDxAQAAAAA/AAAeAADg/wAAAACAHwAAHwAA8H8AAAAAwD8AgJ8AAPgfAAAAAOA/AOBPAADwBwAAAAD4HwDwTwAAcAIAAAAA/h8A+AcAAGAAAAAAAP8PAPwDAAAEAQAAAMD/BwD+AQAIYAAAAADgfwCA3wAAMgQAAAAA4B8AwP8AABgAAAAAAPAHAPP/AIAIAAAAAAD0AMD//4ABAAAAAAAAAQDw/x9AwAAAAAAAYAAA+P83cDgAAAAAABYEAPz/fXg+AAAAAIBhAAD+/z58fwAAAADwIQAA/7/n/38AAAAA/AMAAP7//f8/AAAAAP4PAAA/4P//nwEAAID/DwAAHfz+/y8DAADg/wcAwEH///8fAQAA8L8FAID32P7/PwEAAPjPDwDA/////z8AAAD+/w8A0P////8/AACA/98PAIz+///3DwJA4P/hAwCA/P///w8DeP/9MCAAcPK///9/j/z//zo4GOD2//v//y/+/3IR/ADgr5////8PAPDZA/8BAEDo/48DAADg9MD/AACAAH/AAAAAANn+/wAOAAAEAAAAAADwlx8AAAAAAAAA';
-const mapBytes=Uint8Array.from(atob(MAP_B64),c=>c.charCodeAt(0)),land=[];let kk=0;for(let r=0;r<MAP_H;r++)for(let c=0;c<MAP_W;c++,kk++){if(!((mapBytes[kk>>3]>>(kk&7))&1))continue;const lat=(-82.25+r*3.5)*RAD,lon=(-178.25+c*3.5)*RAD,cl=Math.cos(lat),rel=lon-138*RAD;land.push([cl*Math.sin(rel),Math.sin(lat),cl*Math.cos(rel)]);}
+const mapBytes=Uint8Array.from(atob(MAP_B64),c=>c.charCodeAt(0)),land=[];
+let kk=0;for(let r=0;r<MAP_H;r++)for(let c=0;c<MAP_W;c++,kk++){if(!((mapBytes[kk>>3]>>(kk&7))&1))continue;const lat=(-82.25+r*3.5)*RAD,lon=(-178.25+c*3.5)*RAD,cl=Math.cos(lat),rel=lon-138*RAD;land.push([cl*Math.sin(rel),Math.sin(lat),cl*Math.cos(rel)]);}
 for(let i=0;i<N;i++){const p=land[i%land.length],j=((i/land.length)|0),jitter=j?((i*37)%11-5)*.0018:0;pts[i].shape[1]=[p[0]*(1+jitter),p[1]*(1+jitter),p[2]*(1+jitter)];}
+
 const QR_W=45,QR_H=45,QR_B64='AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAB/RVTBHyBoQ3MKAnQhVBhdgK4SpaUL0EWi8nUBgrRTqCDAX1VV9QcAWLDpAADt9plcGkDhNUBCAXh1k4kPAJJExg0DsEQj+dYBSEMT/DcAXZOXWAPAnLZPjwDu9Z8bDuAELseNA0BZJnl5ABY+Z0gFcAwxQjsBbC8aIRQA+J58LACQMOLbewDps3xnDUCVp/Z7A8itfss0gFKLUBYEADdPt18BAIolKyrA3+9MVQUIqgrGiABdBsT0G6Crli7sAXSlbKMtgCCFqsED8De4fPQBAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=';
-const qrBytes=Uint8Array.from(atob(QR_B64),c=>c.charCodeAt(0)),qrCells=[];for(let i=0;i<QR_W*QR_H;i++)if((qrBytes[i>>3]>>(i&7))&1)qrCells.push([i%QR_W,Math.floor(i/QR_W)]);for(let i=0;i<N;i++){const q=qrCells[i%qrCells.length];pts[i].shape[2]=[(q[0]+.5)/QR_W-.5,.5-(q[1]+.5)/QR_H,0];}
+const qrBytes=Uint8Array.from(atob(QR_B64),c=>c.charCodeAt(0)),qrCells=[];
+for(let i=0;i<QR_W*QR_H;i++)if((qrBytes[i>>3]>>(i&7))&1)qrCells.push([i%QR_W,Math.floor(i/QR_W)]);
+for(let i=0;i<N;i++){const q=qrCells[i%qrCells.length];pts[i].shape[2]=[(q[0]+.5)/QR_W-.5,.5-(q[1]+.5)/QR_H,0];}
+
 function smoother(t){t=Math.max(0,Math.min(1,t));return t*t*t*(t*(t*6-15)+10)}
 function setShape(i){i=(i+names.length)%names.length;if(i===next&&morph>=1)return;current=morph<1?current:next;next=i;morph=0;morphStart=performance.now();updateUI();}
 function cycleShape(){setShape((next+1)%names.length)}
 function updateUI(){[...indicators.children].forEach((d,i)=>d.classList.toggle('active',i===next));label.textContent=names[next];}
 for(let i=0;i<names.length;i++){const d=document.createElement('div');d.className='dot'+(i===0?' active':'');d.onclick=e=>{e.stopPropagation();setShape(i)};indicators.appendChild(d)}
-function rotate(x,y,z){const cy=Math.cos(yaw),sy=Math.sin(yaw),cp=Math.cos(pitch),sp=Math.sin(pitch),cr=Math.cos(roll),sr=Math.sin(roll);const x1=x*cy+z*sy,z1=-x*sy+z*cy;const y2=y*cp-z1*sp,z2=y*sp+z1*cp;return[x1*cr-y2*sr,x1*sr+y2*cr,z2]}
+
+function rotate(x,y,z){
+  const cy=Math.cos(yaw),sy=Math.sin(yaw),cp=Math.cos(pitch),sp=Math.sin(pitch),cr=Math.cos(roll),sr=Math.sin(roll);
+  const x1=x*cy+z*sy,z1=-x*sy+z*cy;
+  const y2=y*cp-z1*sp,z2=y*sp+z1*cp;
+  return[x1*cr-y2*sr,x1*sr+y2*cr,z2]
+}
 function audioUpdate(){if(!analyser||!audioOn){energy*=.93;bass*=.93;mid*=.93;high*=.93;return}analyser.getByteFrequencyData(audioData);const n=audioData.length;let b=0,m=0,h=0,bn=0,mn=0,hn=0;for(let i=0;i<n;i++){const f=i/n*(audioCtx.sampleRate/2),v=audioData[i]/255;if(f<220){b+=v;bn++}else if(f<2200){m+=v;mn++}else if(f<9000){h+=v;hn++}}b/=bn||1;m/=mn||1;h/=hn||1;bass+=(b-bass)*.16;mid+=(m-mid)*.18;high+=(h-high)*.22;energy+=(b*.45+m*.38+h*.17-energy)*.18}
 async function toggleAudio(){if(audioOn){audioStream?.getTracks().forEach(t=>t.stop());audioStream=null;audioOn=false;audioSwitch.classList.remove('on');return}try{audioCtx=audioCtx||new(window.AudioContext||window.webkitAudioContext)();if(audioCtx.state==='suspended')await audioCtx.resume();analyser=audioCtx.createAnalyser();analyser.fftSize=1024;analyser.smoothingTimeConstant=.66;audioData=new Uint8Array(analyser.frequencyBinCount);audioStream=await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:true,noiseSuppression:true,autoGainControl:true}});audioCtx.createMediaStreamSource(audioStream).connect(analyser);audioOn=true;audioSwitch.classList.add('on')}catch(e){audioOn=false;audioSwitch.classList.remove('on')}}
-function drawQR(alpha){if(next!==2||alpha<=0)return;const size=Math.min(W*(W<620?.62:.40),H*(W<620?.32:.44)),cell=size/QR_W,left=cx-size/2,top=cy-size/2;ctx.save();ctx.globalAlpha=alpha*.88;ctx.fillStyle='#fff';for(const q of qrCells){ctx.fillRect(left+q[0]*cell,top+q[1]*cell,Math.ceil(cell+.15),Math.ceil(cell+.15))}ctx.restore()}
-function draw(now){requestAnimationFrame(draw);const dt=Math.min(.04,(now-last)/1000);last=now;audioUpdate();if(!drag){yaw+=yawV*dt*60;pitch+=pitchV*dt*60;roll+=rollV*dt*60;const decay=Math.pow(.90,dt*60);yawV*=decay;pitchV*=decay;rollV*=decay;if(autoRotate&&next!==2){const boost=1+energy*.55;yaw+=dt*.18*boost;pitch+=dt*.125*boost;roll+=dt*.095*boost}}if(morph<1)morph=Math.min(1,(now-morphStart)/MORPH_MS);const t=smoother(morph),wave=Math.sin(Math.PI*Math.min(1,morph));ctx.fillStyle='#000';ctx.fillRect(0,0,W,H);const isQR=next===2&&t>.45,baseScale=scale*(1+bass*.05);for(let i=0;i<N;i++){const p=pts[i],a=p.shape[current],b=p.shape[next];let x=a[0]+(b[0]-a[0])*t,y=a[1]+(b[1]-a[1])*t,z=a[2]+(b[2]-a[2])*t;const lift=1+wave*(.07+.10*p.rnd);x*=lift;y*=lift;z*=lift;if(next!==2||t<.98){const deform=Math.sin(now*.0048+p.phase*2.1+x*5.2)*mid*.040+Math.sin(now*.008+p.phase*4.6)*high*.017;x*=1+deform;y*=1+deform;z*=1+deform;}let rx=x,ry=y,rz=z;if(!(next===2&&t>.92))[rx,ry,rz]=rotate(x,y,z);const persp=1/(1.48-rz*.24),sx=cx+rx*baseScale*persp,sy=cy-ry*baseScale*persp;const depth=Math.max(0,Math.min(1,(rz+1)/2));let alpha=.22+depth*.76;if(current===1||next===1)alpha*=rz>.0?1:.05;if(isQR)alpha*=1-Math.min(1,(t-.55)/.45)*.72;const pink=Math.max(0,Math.min(1,(rx+ry+1.4)/2.8)),blue=1-pink;const R=Math.round(221+29*pink),G=Math.round(224-32*pink+13*blue),B=Math.round(235+15*blue+8*pink);const r=(W<620?.62:.72)+depth*.72+(high*.75*p.rnd);ctx.fillStyle=`rgba(${R},${G},${B},${alpha.toFixed(3)})`;ctx.beginPath();ctx.arc(sx,sy,r,0,TAU);ctx.fill()}drawQR(next===2?Math.max(0,(t-.70)/.30):0)}
+
+function drawQR(alpha){if(alpha<=0)return;const size=Math.min(W*(W<620?.62:.40),H*(W<620?.32:.44)),cell=size/QR_W,left=cx-size/2,top=cy-size/2;ctx.save();ctx.globalAlpha=alpha*.88;ctx.fillStyle='#fff';for(const q of qrCells){ctx.fillRect(left+q[0]*cell,top+q[1]*cell,Math.ceil(cell+.15),Math.ceil(cell+.15))}ctx.restore()}
+function pickBeacon(now){
+  if(now-beaconStart<beaconCycle)return;
+  beaconStart=now;beaconSerial++;
+  let best=beaconIndex,bestZ=-9;
+  const start=(beaconSerial*317)%N;
+  for(let j=0;j<180;j++){
+    const idx=(start+j*17)%N,s=pts[idx].shape[0],[,,rz]=rotate(s[0],s[1],s[2]);
+    if(rz>bestZ){bestZ=rz;best=idx}
+    if(rz>.72)break;
+  }
+  beaconIndex=best;
+}
+function draw(now){requestAnimationFrame(draw);const dt=Math.min(.04,(now-last)/1000);last=now;audioUpdate();
+  if(!drag){
+    yaw+=yawV*dt*60;pitch+=pitchV*dt*60;roll+=rollV*dt*60;
+    const decay=Math.pow(.90,dt*60);yawV*=decay;pitchV*=decay;rollV*=decay;
+    if(autoRotate&&next!==2){
+      const boost=1+energy*.55;
+      yaw+=dt*.18*boost;
+      pitch+=dt*.125*boost;
+      roll+=dt*.095*boost;
+    }
+  }
+  if(morph<1)morph=Math.min(1,(now-morphStart)/MORPH_MS);
+  const t=smoother(morph),globalWave=Math.sin(Math.PI*Math.min(1,morph));
+  const sphereMix=current===0&&next===0?1:current===0?(1-t):next===0?t:0;
+  const qrMix=current===2&&next===2?1:current===2?(1-t):next===2?t:0;
+  if(sphereMix>.86)pickBeacon(now);
+  const beacon=pts[beaconIndex].shape[0],elapsed=(now-beaconStart)%beaconCycle;
+  const ringProgress=(elapsed/beaconCycle)*Math.PI;
+  ctx.fillStyle='#000';ctx.fillRect(0,0,W,H);
+  const baseScale=scale*(1+bass*.05);
+  let beaconScreen=null;
+  for(let i=0;i<N;i++){
+    const p=pts[i],a=p.shape[current],b=p.shape[next];
+    const delay=p.rnd*.14,lt=Math.max(0,Math.min(1,(morph-delay)/(1-.14))),tt=smoother(lt);
+    let x=a[0]+(b[0]-a[0])*tt,y=a[1]+(b[1]-a[1])*tt,z=a[2]+(b[2]-a[2])*tt;
+    const arc=Math.sin(Math.PI*tt)*(.025+.042*p.rnd);
+    x+=Math.sin(p.phase*1.71)*arc;
+    y+=Math.cos(p.phase*1.23)*arc*.72;
+    z+=Math.sin(p.phase*.83+1.1)*arc*.82;
+    const lift=1+globalWave*(.025+.045*p.rnd);x*=lift;y*=lift;z*=lift;
+
+    let ring=0;
+    if(sphereMix>.015){
+      const ss=p.shape[0],dot=Math.max(-1,Math.min(1,ss[0]*beacon[0]+ss[1]*beacon[1]+ss[2]*beacon[2]));
+      const ang=Math.acos(dot),d=ang-ringProgress;
+      ring=Math.exp(-(d*d)/.018)+.42*Math.exp(-((d+.22)*(d+.22))/.03);
+      const amp=.052*ring*sphereMix;
+      x*=1+amp;y*=1+amp;z*=1+amp;
+    }
+
+    if(next!==2||tt<.985){
+      const deform=Math.sin(now*.0048+p.phase*2.1+x*5.2)*mid*.040+Math.sin(now*.008+p.phase*4.6)*high*.017;
+      x*=1+deform;y*=1+deform;z*=1+deform;
+    }
+    let rx=x,ry=y,rz=z;
+    if(!(qrMix>.96))[rx,ry,rz]=rotate(x,y,z);
+    const persp=1/(1.48-rz*.24),sx=cx+rx*baseScale*persp,sy=cy-ry*baseScale*persp;
+    const depth=Math.max(0,Math.min(1,(rz+1)/2));
+    let alpha=.22+depth*.76;
+    if(current===1||next===1)alpha*=rz>.0?1:.05;
+    if(qrMix>.45)alpha*=1-Math.min(1,(qrMix-.45)/.55)*.72;
+
+    const pink=Math.max(0,Math.min(1,(rx+ry+1.4)/2.8)),blue=1-pink;
+    let R=Math.round(221+29*pink),G=Math.round(224-32*pink+13*blue),B=Math.round(235+15*blue+8*pink);
+    if(ring>0.02&&sphereMix>.02){
+      const glow=Math.min(1,ring*.82*sphereMix);R=Math.round(R+(218-R)*glow);G=Math.round(G+(242-G)*glow);B=Math.round(B+(255-B)*glow);
+      alpha=Math.min(1,alpha+glow*.18);
+    }
+    const rr=(W<620?.62:.72)+depth*.72+(high*.75*p.rnd)+(ring*.34*sphereMix);
+    ctx.fillStyle=`rgba(${R},${G},${B},${alpha.toFixed(3)})`;ctx.beginPath();ctx.arc(sx,sy,rr,0,TAU);ctx.fill();
+    if(i===beaconIndex&&sphereMix>.05&&rz>.02)beaconScreen={x:sx,y:sy,a:alpha,z:depth};
+  }
+
+  if(beaconScreen){
+    const pulse=.70+.30*Math.sin(elapsed/beaconCycle*TAU*2);
+    ctx.save();ctx.globalCompositeOperation='lighter';
+    const g=ctx.createRadialGradient(beaconScreen.x,beaconScreen.y,0,beaconScreen.x,beaconScreen.y,18+10*pulse);
+    g.addColorStop(0,`rgba(225,248,255,${(.98*sphereMix).toFixed(3)})`);
+    g.addColorStop(.16,`rgba(108,200,255,${(.78*sphereMix).toFixed(3)})`);
+    g.addColorStop(.48,`rgba(65,145,255,${(.22*sphereMix).toFixed(3)})`);
+    g.addColorStop(1,'rgba(45,120,255,0)');
+    ctx.fillStyle=g;ctx.beginPath();ctx.arc(beaconScreen.x,beaconScreen.y,28+12*pulse,0,TAU);ctx.fill();
+    ctx.fillStyle=`rgba(238,253,255,${sphereMix.toFixed(3)})`;ctx.beginPath();ctx.arc(beaconScreen.x,beaconScreen.y,2.2+1.2*pulse,0,TAU);ctx.fill();
+    ctx.restore();
+  }
+  drawQR(Math.pow(qrMix,1.35));
+}
 requestAnimationFrame(draw);
-canvas.addEventListener('pointerdown',e=>{drag=true;moved=false;downX=px=e.clientX;downY=py=e.clientY;yawV=pitchV=rollV=0;canvas.setPointerCapture?.(e.pointerId)});canvas.addEventListener('pointermove',e=>{if(!drag)return;const dx=e.clientX-px,dy=e.clientY-py;if(Math.hypot(e.clientX-downX,e.clientY-downY)>7)moved=true;if(moved){yaw+=dx*.0076;pitch+=dy*.0076;roll+=(dx-dy)*.0022;yawV=dx*.0076;pitchV=dy*.0076;rollV=(dx-dy)*.0022}px=e.clientX;py=e.clientY});canvas.addEventListener('pointerup',()=>{if(!drag)return;drag=false;if(!moved)cycleShape()});canvas.addEventListener('pointercancel',()=>drag=false);canvas.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();cycleShape()}});menu.onclick=e=>{e.stopPropagation();panel.classList.toggle('open')};panel.onclick=e=>e.stopPropagation();document.body.addEventListener('pointerdown',e=>{if(!panel.contains(e.target)&&e.target!==menu)panel.classList.remove('open')});audioSwitch.onclick=toggleAudio;
+
+canvas.addEventListener('pointerdown',e=>{drag=true;moved=false;downX=px=e.clientX;downY=py=e.clientY;yawV=pitchV=rollV=0;canvas.setPointerCapture?.(e.pointerId)});
+canvas.addEventListener('pointermove',e=>{if(!drag)return;const dx=e.clientX-px,dy=e.clientY-py;if(Math.hypot(e.clientX-downX,e.clientY-downY)>7)moved=true;if(moved){yaw+=dx*.0076;pitch+=dy*.0076;roll+=(dx-dy)*.0022;yawV=dx*.0076;pitchV=dy*.0076;rollV=(dx-dy)*.0022}px=e.clientX;py=e.clientY});
+canvas.addEventListener('pointerup',e=>{if(!drag)return;drag=false;if(!moved)cycleShape()});canvas.addEventListener('pointercancel',()=>drag=false);
+canvas.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();cycleShape()}});
+menu.onclick=e=>{e.stopPropagation();panel.classList.toggle('open')};panel.onclick=e=>e.stopPropagation();document.body.addEventListener('pointerdown',e=>{if(!panel.contains(e.target)&&e.target!==menu)panel.classList.remove('open')});audioSwitch.onclick=toggleAudio;
 })();
 </script>
 </body>
