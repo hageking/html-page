@@ -33,7 +33,7 @@ canvas{position:fixed;inset:0;width:100%;height:100%;display:block;outline:none}
 <div class="label" id="label">Sphere</div>
 <div class="indicators" id="indicators"></div>
 <div class="hint">DRAG TO ROTATE</div>
-<div class="version">v2.2.1</div>
+<div class="version">v2.2.2</div>
 <script>
 (()=>{
 const canvas=document.getElementById('c'),ctx=canvas.getContext('2d',{alpha:false});
@@ -43,7 +43,7 @@ const TAU=Math.PI*2,RAD=Math.PI/180,N=2600;
 const names=['Sphere','Map','QR'];
 let W=0,H=0,DPR=1,scale=1,cx=0,cy=0,last=performance.now(),yaw=.1,pitch=-.08,roll=.06,yawV=0,pitchV=0,rollV=0,drag=false,px=0,py=0,downX=0,downY=0,moved=false,autoRotate=true;
 let current=0,next=0,morph=1,morphStart=0,MORPH_MS=1450;
-let beaconIndex=73,beaconStart=performance.now(),beaconCycle=3200,beaconSerial=0;
+let beaconIndex=73,beaconStart=performance.now(),beaconCycle=5600,waveDuration=950,beaconSerial=0;
 let analyser=null,audioCtx=null,audioData=null,audioStream=null,audioOn=false,energy=0,bass=0,mid=0,high=0;
 const pts=Array.from({length:N},(_,i)=>({phase:((i*.61803398875)%1)*TAU,rnd:((i*73)%997)/997,shape:[]}));
 
@@ -111,7 +111,7 @@ function draw(now){requestAnimationFrame(draw);const dt=Math.min(.04,(now-last)/
   const qrMix=current===2&&next===2?1:current===2?(1-t):next===2?t:0;
   if(sphereMix>.86)pickBeacon(now);
   const beacon=pts[beaconIndex].shape[0],elapsed=(now-beaconStart)%beaconCycle;
-  const waveLife=Math.min(1,elapsed/(beaconCycle*.82)),ringProgress=waveLife*1.02,waveFade=1-smoother(Math.max(0,(waveLife-.68)/.32));
+  const waveLife=Math.min(1,elapsed/waveDuration),ringProgress=waveLife*1.02,waveFade=1-smoother(Math.max(0,(waveLife-.58)/.42));
   ctx.fillStyle='#000';ctx.fillRect(0,0,W,H);
   const baseScale=scale*(1+bass*.05);
   let beaconScreen=null;
@@ -158,7 +158,7 @@ function draw(now){requestAnimationFrame(draw);const dt=Math.min(.04,(now-last)/
   }
 
   if(beaconScreen){
-    const pulse=.78+.22*Math.sin(elapsed/beaconCycle*TAU*2);
+    const pulse=.78+.22*Math.sin(Math.min(1,elapsed/waveDuration)*TAU*1.5);
     ctx.save();ctx.globalCompositeOperation='lighter';
     const g=ctx.createRadialGradient(beaconScreen.x,beaconScreen.y,0,beaconScreen.x,beaconScreen.y,10+5*pulse);
     g.addColorStop(0,`rgba(235,249,255,${(.62*sphereMix).toFixed(3)})`);
