@@ -33,7 +33,7 @@ canvas{position:fixed;inset:0;width:100%;height:100%;display:block;outline:none}
 <div class="label" id="label">Sphere</div>
 <div class="indicators" id="indicators"></div>
 <div class="hint">DRAG TO ROTATE</div>
-<div class="version">v2.2.0</div>
+<div class="version">v2.2.1</div>
 <script>
 (()=>{
 const canvas=document.getElementById('c'),ctx=canvas.getContext('2d',{alpha:false});
@@ -111,7 +111,7 @@ function draw(now){requestAnimationFrame(draw);const dt=Math.min(.04,(now-last)/
   const qrMix=current===2&&next===2?1:current===2?(1-t):next===2?t:0;
   if(sphereMix>.86)pickBeacon(now);
   const beacon=pts[beaconIndex].shape[0],elapsed=(now-beaconStart)%beaconCycle;
-  const ringProgress=(elapsed/beaconCycle)*Math.PI;
+  const waveLife=Math.min(1,elapsed/(beaconCycle*.82)),ringProgress=waveLife*1.02,waveFade=1-smoother(Math.max(0,(waveLife-.68)/.32));
   ctx.fillStyle='#000';ctx.fillRect(0,0,W,H);
   const baseScale=scale*(1+bass*.05);
   let beaconScreen=null;
@@ -129,8 +129,8 @@ function draw(now){requestAnimationFrame(draw);const dt=Math.min(.04,(now-last)/
     if(sphereMix>.015){
       const ss=p.shape[0],dot=Math.max(-1,Math.min(1,ss[0]*beacon[0]+ss[1]*beacon[1]+ss[2]*beacon[2]));
       const ang=Math.acos(dot),d=ang-ringProgress;
-      ring=Math.exp(-(d*d)/.018)+.42*Math.exp(-((d+.22)*(d+.22))/.03);
-      const amp=.052*ring*sphereMix;
+      ring=(Math.exp(-(d*d)/.010)+.24*Math.exp(-((d+.14)*(d+.14))/.018))*waveFade*(ang<1.16?1:0);
+      const amp=.036*ring*sphereMix;
       x*=1+amp;y*=1+amp;z*=1+amp;
     }
 
@@ -147,26 +147,26 @@ function draw(now){requestAnimationFrame(draw);const dt=Math.min(.04,(now-last)/
     if(qrMix>.45)alpha*=1-Math.min(1,(qrMix-.45)/.55)*.72;
 
     const pink=Math.max(0,Math.min(1,(rx+ry+1.4)/2.8)),blue=1-pink;
-    let R=Math.round(221+29*pink),G=Math.round(224-32*pink+13*blue),B=Math.round(235+15*blue+8*pink);
+    let R=Math.round(230+12*pink),G=Math.round(232-11*pink+5*blue),B=Math.round(239+8*blue+3*pink);
     if(ring>0.02&&sphereMix>.02){
-      const glow=Math.min(1,ring*.82*sphereMix);R=Math.round(R+(218-R)*glow);G=Math.round(G+(242-G)*glow);B=Math.round(B+(255-B)*glow);
-      alpha=Math.min(1,alpha+glow*.18);
+      const glow=Math.min(.72,ring*.58*sphereMix);R=Math.round(R+(226-R)*glow);G=Math.round(G+(244-G)*glow);B=Math.round(B+(255-B)*glow);
+      alpha=Math.min(1,alpha+glow*.10);
     }
-    const rr=(W<620?.62:.72)+depth*.72+(high*.75*p.rnd)+(ring*.34*sphereMix);
+    const rr=(W<620?.62:.72)+depth*.72+(high*.75*p.rnd)+(ring*.20*sphereMix);
     ctx.fillStyle=`rgba(${R},${G},${B},${alpha.toFixed(3)})`;ctx.beginPath();ctx.arc(sx,sy,rr,0,TAU);ctx.fill();
     if(i===beaconIndex&&sphereMix>.05&&rz>.02)beaconScreen={x:sx,y:sy,a:alpha,z:depth};
   }
 
   if(beaconScreen){
-    const pulse=.70+.30*Math.sin(elapsed/beaconCycle*TAU*2);
+    const pulse=.78+.22*Math.sin(elapsed/beaconCycle*TAU*2);
     ctx.save();ctx.globalCompositeOperation='lighter';
-    const g=ctx.createRadialGradient(beaconScreen.x,beaconScreen.y,0,beaconScreen.x,beaconScreen.y,18+10*pulse);
-    g.addColorStop(0,`rgba(225,248,255,${(.98*sphereMix).toFixed(3)})`);
-    g.addColorStop(.16,`rgba(108,200,255,${(.78*sphereMix).toFixed(3)})`);
-    g.addColorStop(.48,`rgba(65,145,255,${(.22*sphereMix).toFixed(3)})`);
-    g.addColorStop(1,'rgba(45,120,255,0)');
-    ctx.fillStyle=g;ctx.beginPath();ctx.arc(beaconScreen.x,beaconScreen.y,28+12*pulse,0,TAU);ctx.fill();
-    ctx.fillStyle=`rgba(238,253,255,${sphereMix.toFixed(3)})`;ctx.beginPath();ctx.arc(beaconScreen.x,beaconScreen.y,2.2+1.2*pulse,0,TAU);ctx.fill();
+    const g=ctx.createRadialGradient(beaconScreen.x,beaconScreen.y,0,beaconScreen.x,beaconScreen.y,10+5*pulse);
+    g.addColorStop(0,`rgba(235,249,255,${(.62*sphereMix).toFixed(3)})`);
+    g.addColorStop(.20,`rgba(155,216,255,${(.38*sphereMix).toFixed(3)})`);
+    g.addColorStop(.55,`rgba(98,168,255,${(.10*sphereMix).toFixed(3)})`);
+    g.addColorStop(1,'rgba(70,145,255,0)');
+    ctx.fillStyle=g;ctx.beginPath();ctx.arc(beaconScreen.x,beaconScreen.y,16+7*pulse,0,TAU);ctx.fill();
+    ctx.fillStyle=`rgba(238,251,255,${(.78*sphereMix).toFixed(3)})`;ctx.beginPath();ctx.arc(beaconScreen.x,beaconScreen.y,1.45+.55*pulse,0,TAU);ctx.fill();
     ctx.restore();
   }
   drawQR(Math.pow(qrMix,1.35));
