@@ -1,0 +1,216 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>MapLibre Camera Map Test</title>
+  <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@5.24.0/dist/maplibre-gl.css" />
+  <style>
+    :root {
+      color-scheme: dark;
+      --panel: rgba(9, 13, 20, .88);
+      --panel-border: rgba(255,255,255,.12);
+      --text: #f4f7fb;
+      --muted: #9aa7b7;
+      --accent: #5bb8ff;
+      --danger: #ff4d67;
+    }
+    * { box-sizing: border-box; }
+    html, body, #map { width: 100%; height: 100%; margin: 0; }
+    body { font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; background:#070a0f; }
+    #map { position: fixed; inset: 0; }
+
+    .panel {
+      position: fixed;
+      z-index: 10;
+      top: max(14px, env(safe-area-inset-top));
+      left: max(14px, env(safe-area-inset-left));
+      width: min(390px, calc(100vw - 28px));
+      padding: 14px;
+      border: 1px solid var(--panel-border);
+      border-radius: 16px;
+      background: var(--panel);
+      backdrop-filter: blur(18px);
+      box-shadow: 0 12px 36px rgba(0,0,0,.35);
+    }
+    .title { display:flex; align-items:center; gap:9px; font-weight:700; font-size:15px; }
+    .dot { width:9px; height:9px; border-radius:50%; background:var(--danger); box-shadow:0 0 18px rgba(255,77,103,.75); }
+    .sub { color:var(--muted); margin-top:5px; font-size:12px; line-height:1.5; }
+    .row { display:flex; gap:8px; margin-top:12px; }
+    select, input, button {
+      min-height: 40px; border-radius: 10px; border: 1px solid var(--panel-border); background:#111722; color:var(--text); padding:0 11px;
+    }
+    select { width: 135px; }
+    input { flex:1; min-width:0; }
+    button { cursor:pointer; font-weight:650; background:#172334; }
+    button:hover { background:#1d2c42; }
+    .status { margin-top:9px; font-size:11px; color:var(--muted); }
+    .status strong { color:#c8f0ff; }
+
+    .camera-marker {
+      width: 22px; height:22px; border-radius:50% 50% 50% 6px; transform:rotate(-45deg);
+      background:var(--danger); border:2px solid rgba(255,255,255,.9); box-shadow:0 4px 14px rgba(255,77,103,.55);
+    }
+    .camera-marker::after {
+      content:""; position:absolute; width:6px; height:6px; border-radius:50%; background:#fff; left:6px; top:6px;
+    }
+    .maplibregl-popup-content {
+      background:#101722; color:#eef5ff; border:1px solid rgba(255,255,255,.12); border-radius:12px; box-shadow:0 12px 28px rgba(0,0,0,.4);
+    }
+    .maplibregl-popup-tip { border-top-color:#101722 !important; }
+    .maplibregl-popup-close-button { color:#fff; font-size:18px; padding:5px 8px; }
+    .cam-name { font-weight:750; margin-bottom:5px; }
+    .cam-meta { color:#9fb0c4; font-size:12px; line-height:1.5; }
+
+    @media (max-width: 620px) {
+      .panel { right:14px; width:auto; }
+      .row { flex-wrap:wrap; }
+      select { width:100%; }
+      input { width:100%; flex-basis:100%; }
+      button { flex:1; }
+    }
+  </style>
+</head>
+<body>
+  <div id="map"></div>
+
+  <section class="panel">
+    <div class="title"><span class="dot"></span>監視カメラ地図 テスト</div>
+    <div class="sub">MapLibreでベクトル地図を描画し、ダークスタイルとカメラ位置を重ねています。</div>
+    <div class="row">
+      <select id="provider" aria-label="地図プロバイダ">
+        <option value="free">無料デモ</option>
+        <option value="maptiler">MapTiler</option>
+      </select>
+      <input id="apiKey" type="password" placeholder="MapTiler API key" autocomplete="off" />
+      <button id="apply">適用</button>
+    </div>
+    <div class="status" id="status">現在: <strong>OSM由来ベクトル地図の無料デモ</strong></div>
+  </section>
+
+  <script src="https://unpkg.com/maplibre-gl@5.24.0/dist/maplibre-gl.js"></script>
+  <script>
+    const MAPTILER_STYLE = key => `https://api.maptiler.com/maps/streets-v4/style.json?key=${encodeURIComponent(key)}`;
+    const FREE_STYLE = 'https://tiles.openfreemap.org/styles/liberty';
+
+    // テスト用のダミーカメラ位置。実データに差し替え可能。
+    const cameras = [
+      { name: 'Camera A', lng: 135.4959, lat: 34.7025, status: 'online' },
+      { name: 'Camera B', lng: 135.5028, lat: 34.6966, status: 'online' },
+      { name: 'Camera C', lng: 135.4874, lat: 34.7089, status: 'offline' },
+      { name: 'Camera D', lng: 135.5146, lat: 34.7041, status: 'online' }
+    ];
+
+    const savedKey = localStorage.getItem('maptiler-key') || '';
+    const apiKeyInput = document.getElementById('apiKey');
+    const providerSelect = document.getElementById('provider');
+    const statusEl = document.getElementById('status');
+    apiKeyInput.value = savedKey;
+
+    const map = new maplibregl.Map({
+      container: 'map',
+      style: FREE_STYLE,
+      center: [135.5002, 34.7024],
+      zoom: 12.8,
+      pitch: 26,
+      bearing: -8,
+      antialias: true,
+      attributionControl: true
+    });
+
+    map.addControl(new maplibregl.NavigationControl({ visualizePitch: true }), 'bottom-right');
+    map.addControl(new maplibregl.ScaleControl({ unit: 'metric' }), 'bottom-left');
+
+    function darkenCurrentVectorStyle() {
+      const style = map.getStyle();
+      if (!style || !style.layers) return;
+
+      for (const layer of style.layers) {
+        try {
+          if (layer.type === 'background') {
+            map.setPaintProperty(layer.id, 'background-color', '#080b10');
+          }
+          if (layer.type === 'fill') {
+            const id = layer.id.toLowerCase();
+            let fill = '#121923';
+            if (id.includes('water')) fill = '#0b1c2a';
+            else if (id.includes('park') || id.includes('landcover') || id.includes('wood')) fill = '#102019';
+            else if (id.includes('building')) fill = '#19212c';
+            map.setPaintProperty(layer.id, 'fill-color', fill);
+            if (map.getPaintProperty(layer.id, 'fill-outline-color') !== undefined) {
+              map.setPaintProperty(layer.id, 'fill-outline-color', '#263342');
+            }
+          }
+          if (layer.type === 'line') {
+            const id = layer.id.toLowerCase();
+            let color = '#394554';
+            let opacity = 0.9;
+            if (id.includes('motorway') || id.includes('trunk')) color = '#6c7d92';
+            else if (id.includes('rail')) { color = '#354255'; opacity = 0.7; }
+            else if (id.includes('water')) color = '#18364c';
+            map.setPaintProperty(layer.id, 'line-color', color);
+            map.setPaintProperty(layer.id, 'line-opacity', opacity);
+          }
+          if (layer.type === 'symbol') {
+            if (map.getPaintProperty(layer.id, 'text-color') !== undefined) {
+              map.setPaintProperty(layer.id, 'text-color', '#c7d2df');
+            }
+            if (map.getPaintProperty(layer.id, 'text-halo-color') !== undefined) {
+              map.setPaintProperty(layer.id, 'text-halo-color', '#080b10');
+            }
+            if (map.getPaintProperty(layer.id, 'text-halo-width') !== undefined) {
+              map.setPaintProperty(layer.id, 'text-halo-width', 1.2);
+            }
+          }
+        } catch (_) {
+          // プロバイダ側の式や非対応レイヤーはそのまま残す。
+        }
+      }
+    }
+
+    function addCameraMarkers() {
+      document.querySelectorAll('.camera-marker').forEach(el => el.remove());
+      for (const cam of cameras) {
+        const el = document.createElement('div');
+        el.className = 'camera-marker';
+        if (cam.status === 'offline') {
+          el.style.filter = 'grayscale(1)';
+          el.style.opacity = '.65';
+        }
+        const popup = new maplibregl.Popup({ offset: 18 }).setHTML(
+          `<div class="cam-name">${cam.name}</div>` +
+          `<div class="cam-meta">状態: ${cam.status}<br>緯度: ${cam.lat.toFixed(5)}<br>経度: ${cam.lng.toFixed(5)}</div>`
+        );
+        new maplibregl.Marker({ element: el, anchor: 'bottom' })
+          .setLngLat([cam.lng, cam.lat])
+          .setPopup(popup)
+          .addTo(map);
+      }
+    }
+
+    map.on('style.load', () => {
+      // ベクトルレイヤーの色をMapLibre側で上書きしてダーク化。
+      darkenCurrentVectorStyle();
+      addCameraMarkers();
+    });
+
+    document.getElementById('apply').addEventListener('click', () => {
+      const provider = providerSelect.value;
+      const key = apiKeyInput.value.trim();
+
+      if (provider === 'maptiler') {
+        if (!key) {
+          statusEl.innerHTML = 'MapTilerを使うには <strong>APIキーを入力してください</strong>';
+          return;
+        }
+        localStorage.setItem('maptiler-key', key);
+        map.setStyle(MAPTILER_STYLE(key));
+        statusEl.innerHTML = '現在: <strong>MapTiler streets-v4 + MapLibreダーク化</strong>';
+      } else {
+        map.setStyle(FREE_STYLE);
+        statusEl.innerHTML = '現在: <strong>OSM由来ベクトル地図の無料デモ</strong>';
+      }
+    });
+  </script>
+</body>
+</html>
