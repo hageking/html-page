@@ -33,7 +33,7 @@ canvas{position:fixed;inset:0;width:100%;height:100%;display:block;outline:none}
 <div class="label" id="label">Sphere</div>
 <div class="indicators" id="indicators"></div>
 <div class="hint">DRAG TO ROTATE</div>
-<div class="version">v2.4.4</div>
+<div class="version">v2.4.5</div>
 <script>
 (()=>{
 const canvas=document.getElementById('c'),ctx=canvas.getContext('2d',{alpha:false});
@@ -78,11 +78,12 @@ function requestLocation(){
     userLocation=latLonToPoint(pos.coords.latitude,pos.coords.longitude);
   };
   const fail=()=>{locationRequested=false;};
-  locationWatchId=navigator.geolocation.watchPosition(
-    update,fail,
-    {enableHighAccuracy:true,maximumAge:12000,timeout:12000}
-  );
+  const options={enableHighAccuracy:true,maximumAge:5000,timeout:15000};
+
+  navigator.geolocation.getCurrentPosition(update,fail,options);
+  locationWatchId=navigator.geolocation.watchPosition(update,fail,options);
 }
+setTimeout(requestLocation,180);
 function smoother(t){t=Math.max(0,Math.min(1,t));return t*t*t*(t*(t*6-15)+10)}
 function setShape(i){i=(i+names.length)%names.length;if(i===next&&morph>=1)return;if(i===1)requestLocation();current=next;next=i;morph=0;morphStart=performance.now();updateUI();}
 function cycleShape(){setShape((next+1)%names.length)}
@@ -96,10 +97,27 @@ function rotate(x,y,z){
   return[x1*cr-y2*sr,x1*sr+y2*cr,z2]
 }
 function audioUpdate(){
-  if(!analyser||!audioOn){energy*=.90;bass*=.88;mid*=.90;high*=.88;peak*=.86;return}
-  analyser.getByteFrequencyData(audioData);const n=audioData.length;let b=0,m=0,h=0,bn=0,mn=0,hn=0,maxv=0;
-  for(let i=0;i<n;i++){const f=i/n*(audioCtx.sampleRate/2),v=audioData[i]/255;if(v>maxv)maxv=v;if(f<220){b+=v;bn++}else if(f<2200){m+=v;mn++}else if(f<9000){h+=v;hn++}}
-  b/=bn||1;m/=mn||1;h/=hn||1;bass+=(b-bass)*.24;mid+=(m-mid)*.20;high+=(h-high)*.28;const e=b*.48+m*.36+h*.16;energy+=(e-energy)*.24;peak=Math.max(maxv,peak*.90)
+  if(!analyser||!audioOn){
+    energy*=.90;bass*=.88;mid*=.90;high*=.88;peak*=.86;
+    return
+  }
+  analyser.getByteFrequencyData(audioData);
+  const n=audioData.length;
+  let b=0,m=0,h=0,bn=0,mn=0,hn=0,maxv=0;
+  for(let i=0;i<n;i++){
+    const f=i/n*(audioCtx.sampleRate/2),v=audioData[i]/255;
+    if(v>maxv)maxv=v;
+    if(f<220){b+=v;bn++}
+    else if(f<2200){m+=v;mn++}
+    else if(f<9000){h+=v;hn++}
+  }
+  b/=bn||1;m/=mn||1;h/=hn||1;
+  bass+=(b-bass)*.24;
+  mid+=(m-mid)*.20;
+  high+=(h-high)*.28;
+  const e=b*.48+m*.36+h*.16;
+  energy+=(e-energy)*.24;
+  peak=Math.max(maxv,peak*.90);
 }
 async function toggleAudio(){if(audioOn){audioStream?.getTracks().forEach(t=>t.stop());audioStream=null;audioOn=false;audioSwitch.classList.remove('on');return}try{audioCtx=audioCtx||new(window.AudioContext||window.webkitAudioContext)();if(audioCtx.state==='suspended')await audioCtx.resume();analyser=audioCtx.createAnalyser();analyser.fftSize=1024;analyser.smoothingTimeConstant=.66;audioData=new Uint8Array(analyser.frequencyBinCount);audioStream=await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:true,noiseSuppression:true,autoGainControl:true}});audioCtx.createMediaStreamSource(audioStream).connect(analyser);audioOn=true;audioSwitch.classList.add('on')}catch(e){audioOn=false;audioSwitch.classList.remove('on')}}
 
@@ -232,43 +250,50 @@ function draw(now){requestAnimationFrame(draw);const dt=Math.min(.04,(now-last)/
 
   const mapMix=current===1&&next===1?1:current===1?(1-t):next===1?t:0;
   if(userLocation&&mapMix>.04){
-    const ux=userLocation[0]*1.035,uy=userLocation[1]*1.035,uz=userLocation[2]*1.035;
+    const ux=userLocation[0]*1.045,uy=userLocation[1]*1.045,uz=userLocation[2]*1.045;
     const [mx,my,mz]=rotate(ux,uy,uz);
-    if(mz>-.08){
-      const perspective=1/(1.42-mz*.18);
-      const sx=cx+mx*baseScale*perspective;
-      const sy=cy-my*baseScale*perspective;
-      const front=Math.max(0,Math.min(1,(mz+.08)/.38));
-      const pulse=.5+.5*Math.sin(now*.006);
+    if(mz>-.02){
+      const persp=1/(1.48-mz*.24);
+      const sx=cx+mx*baseScale*persp;
+      const sy=cy-my*baseScale*persp;
+      const front=Math.max(0,Math.min(1,(mz+.02)/.28));
+      const pulse=.5+.5*Math.sin(now*.0075);
+
       ctx.save();
       ctx.globalCompositeOperation='lighter';
-      ctx.globalAlpha=mapMix*(.45+.55*front);
+      ctx.globalAlpha=mapMix*(.72+.28*front);
 
-      ctx.strokeStyle='rgba(255,70,70,.78)';
-      ctx.lineWidth=1.25;
+      const halo=ctx.createRadialGradient(sx,sy,0,sx,sy,19+8*pulse);
+      halo.addColorStop(0,'rgba(255,245,245,1)');
+      halo.addColorStop(.10,'rgba(255,80,80,.98)');
+      halo.addColorStop(.34,'rgba(255,28,28,.62)');
+      halo.addColorStop(.68,'rgba(255,0,0,.20)');
+      halo.addColorStop(1,'rgba(255,0,0,0)');
+      ctx.fillStyle=halo;
       ctx.beginPath();
-      ctx.arc(sx,sy,5.5+3.2*pulse,0,TAU);
-      ctx.stroke();
-
-      const rg=ctx.createRadialGradient(sx,sy,0,sx,sy,10+4*pulse);
-      rg.addColorStop(0,'rgba(255,235,235,.98)');
-      rg.addColorStop(.18,'rgba(255,75,75,.96)');
-      rg.addColorStop(.48,'rgba(255,35,35,.34)');
-      rg.addColorStop(1,'rgba(255,20,20,0)');
-      ctx.fillStyle=rg;
-      ctx.beginPath();
-      ctx.arc(sx,sy,10+4*pulse,0,TAU);
+      ctx.arc(sx,sy,19+8*pulse,0,TAU);
       ctx.fill();
 
-      ctx.fillStyle='rgba(255,55,55,.98)';
+      ctx.strokeStyle='rgba(255,55,55,.96)';
+      ctx.lineWidth=1.8;
       ctx.beginPath();
-      ctx.arc(sx,sy,2.2,0,TAU);
+      ctx.arc(sx,sy,8+5*pulse,0,TAU);
+      ctx.stroke();
+
+      ctx.fillStyle='#ff2a2a';
+      ctx.beginPath();
+      ctx.arc(sx,sy,4.2,0,TAU);
+      ctx.fill();
+
+      ctx.fillStyle='rgba(255,255,255,.98)';
+      ctx.beginPath();
+      ctx.arc(sx,sy,1.45,0,TAU);
       ctx.fill();
       ctx.restore();
     }
   }
 
-  if(beaconScreen&&elapsed<waveDuration){
+if(beaconScreen&&elapsed<waveDuration){
     const beaconLife=1-smoother(Math.max(0,(elapsed/waveDuration-.52)/.48));
     const pulse=.78+.22*Math.sin(Math.min(1,elapsed/waveDuration)*TAU*1.5);
     ctx.save();ctx.globalCompositeOperation='lighter';
@@ -293,9 +318,12 @@ canvas.addEventListener('pointermove',e=>{
     const sensitivity=0.0062;
     yaw+=dx*sensitivity;
     pitch+=dy*sensitivity;
+
     roll*=.94;
+
     const limit=Math.PI*.48;
     pitch=Math.max(-limit,Math.min(limit,pitch));
+
     yawV=dx*sensitivity;
     pitchV=dy*sensitivity;
     rollV=0;
