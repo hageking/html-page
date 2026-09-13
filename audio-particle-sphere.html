@@ -33,7 +33,7 @@ canvas{position:fixed;inset:0;width:100%;height:100%;display:block;outline:none}
 <div class="label" id="label">Sphere</div>
 <div class="indicators" id="indicators"></div>
 <div class="hint">DRAG TO ROTATE</div>
-<div class="version">v2.4.5</div>
+<div class="version">v2.4.6</div>
 <script>
 (()=>{
 const canvas=document.getElementById('c'),ctx=canvas.getContext('2d',{alpha:false});
@@ -50,12 +50,14 @@ const pts=Array.from({length:N},(_,i)=>({phase:((i*.61803398875)%1)*TAU,rnd:((i*
 function resize(){W=innerWidth;H=innerHeight;DPR=Math.min(devicePixelRatio||1,2);canvas.width=Math.round(W*DPR);canvas.height=Math.round(H*DPR);ctx.setTransform(DPR,0,0,DPR,0,0);cx=W*.5;cy=H*(W<620?.445:.46);scale=Math.min(W*(W<620?.315:.23),H*(W<620?.235:.30));}
 addEventListener('resize',resize);resize();
 
+// 0 Sphere — dense Fibonacci shell
 const golden=Math.PI*(3-Math.sqrt(5));
 for(let i=0;i<N;i++){
   const y=1-2*(i+.5)/N,rr=Math.sqrt(Math.max(0,1-y*y)),a=i*golden;
   pts[i].shape[0]=[rr*Math.cos(a),y,rr*Math.sin(a)];
 }
 
+// 1 Map / Earth — embedded land mask
 const MAP_W=103,MAP_H=48,MAP_B64='AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABgAAAAAAAAAAAAAAAAcAAAAAAAAAAAAAAAADAAAAAAAAAAAAIAAAA8AAAAAAAAAAACAAAAPAAAAAAAAMABAAAAAD4AABgAAMDxAQAAAAA/AAAeAADg/wAAAACAHwAAHwAA8H8AAAAAwD8AgJ8AAPgfAAAAAOA/AOBPAADwBwAAAAD4HwDwTwAAcAIAAAAA/h8A+AcAAGAAAAAAAP8PAPwDAAAEAQAAAMD/BwD+AQAIYAAAAADgfwCA3wAAMgQAAAAA4B8AwP8AABgAAAAAAPAHAPP/AIAIAAAAAAD0AMD//4ABAAAAAAAAAQDw/x9AwAAAAAAAYAAA+P83cDgAAAAAABYEAPz/fXg+AAAAAIBhAAD+/z58fwAAAADwIQAA/7/n/38AAAAA/AMAAP7//f8/AAAAAP4PAAA/4P//nwEAAID/DwAAHfz+/y8DAADg/wcAwEH///8fAQAA8L8FAID32P7/PwEAAPjPDwDA/////z8AAAD+/w8A0P////8/AACA/98PAIz+///3DwJA4P/hAwCA/P///w8DeP/9MCAAcPK///9/j/z//zo4GOD2//v//y/+/3IR/ADgr5////8PAPDZA/8BAEDo/48DAADg9MD/AACAAH/AAAAAANn+/wAOAAAEAAAAAADwlx8AAAAAAAAA';
 const mapBytes=Uint8Array.from(atob(MAP_B64),c=>c.charCodeAt(0)),land=[];
 let kk=0;for(let r=0;r<MAP_H;r++)for(let c=0;c<MAP_W;c++,kk++){if(!((mapBytes[kk>>3]>>(kk&7))&1))continue;const lat=(-82.25+r*3.5)*RAD,lon=(-178.25+c*3.5)*RAD,cl=Math.cos(lat),rel=lon-138*RAD;land.push([cl*Math.sin(rel),Math.sin(lat),cl*Math.cos(rel)]);}
@@ -195,6 +197,7 @@ function draw(now){requestAnimationFrame(draw);const dt=Math.min(.04,(now-last)/
     let x=p.x,y=p.y,z=p.z;
     const lift=1+globalWave*(.018+.030*p.rnd);x*=lift;y*=lift;z*=lift;
 
+    // Microphone-driven 3D vibration for Sphere.
     const audioSphereMix=sphereMix;
     if((next===0||current===0)&&audioSphereMix>.001){
       const base=p.shape[0];
@@ -214,6 +217,7 @@ function draw(now){requestAnimationFrame(draw);const dt=Math.min(.04,(now-last)/
 
       x*=radial;y*=radial;z*=radial;
 
+      // Tiny tangential vibration makes the dots feel physically alive.
       const tangent=(high*.010+bandPulse*.008)*audioSphereMix;
       x+=Math.sin(p.phase*3.7+now*.018)*tangent;
       y+=Math.cos(p.phase*4.3-now*.016)*tangent;
@@ -257,37 +261,12 @@ function draw(now){requestAnimationFrame(draw);const dt=Math.min(.04,(now-last)/
       const sx=cx+mx*baseScale*persp;
       const sy=cy-my*baseScale*persp;
       const front=Math.max(0,Math.min(1,(mz+.02)/.28));
-      const pulse=.5+.5*Math.sin(now*.0075);
 
       ctx.save();
-      ctx.globalCompositeOperation='lighter';
-      ctx.globalAlpha=mapMix*(.72+.28*front);
-
-      const halo=ctx.createRadialGradient(sx,sy,0,sx,sy,19+8*pulse);
-      halo.addColorStop(0,'rgba(255,245,245,1)');
-      halo.addColorStop(.10,'rgba(255,80,80,.98)');
-      halo.addColorStop(.34,'rgba(255,28,28,.62)');
-      halo.addColorStop(.68,'rgba(255,0,0,.20)');
-      halo.addColorStop(1,'rgba(255,0,0,0)');
-      ctx.fillStyle=halo;
+      ctx.globalAlpha=mapMix*(.78+.22*front);
+      ctx.fillStyle='#ff2b2b';
       ctx.beginPath();
-      ctx.arc(sx,sy,19+8*pulse,0,TAU);
-      ctx.fill();
-
-      ctx.strokeStyle='rgba(255,55,55,.96)';
-      ctx.lineWidth=1.8;
-      ctx.beginPath();
-      ctx.arc(sx,sy,8+5*pulse,0,TAU);
-      ctx.stroke();
-
-      ctx.fillStyle='#ff2a2a';
-      ctx.beginPath();
-      ctx.arc(sx,sy,4.2,0,TAU);
-      ctx.fill();
-
-      ctx.fillStyle='rgba(255,255,255,.98)';
-      ctx.beginPath();
-      ctx.arc(sx,sy,1.45,0,TAU);
+      ctx.arc(sx,sy,5.2,0,TAU);
       ctx.fill();
       ctx.restore();
     }
@@ -315,12 +294,16 @@ canvas.addEventListener('pointermove',e=>{
   const dx=e.clientX-px,dy=e.clientY-py;
   if(Math.hypot(e.clientX-downX,e.clientY-downY)>7)moved=true;
   if(moved){
+    // Natural mobile drag:
+    // finger right -> object follows right, finger up -> object follows up.
     const sensitivity=0.0062;
     yaw+=dx*sensitivity;
     pitch+=dy*sensitivity;
 
+    // Prevent accidental screen-axis roll from diagonal swipes.
     roll*=.94;
 
+    // Clamp pitch to avoid the controls feeling inverted near the poles.
     const limit=Math.PI*.48;
     pitch=Math.max(-limit,Math.min(limit,pitch));
 
