@@ -1,0 +1,743 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Apple株はなぜ上がったのか。FY2026の業績、Services、iPhone 18、AI期待、自社株買い、金利と供給制約をグラフで分解する解説ブログ。">
+  <meta name="theme-color" content="#101828">
+  <title>Apple株はなぜ上がったのか | 2026年9月16日版</title>
+  <style>
+    :root {
+      --ink: #101828;
+      --muted: #667085;
+      --line: #e4e7ec;
+      --paper: #fbfaf7;
+      --card: #ffffff;
+      --blue: #1769e0;
+      --blue-deep: #0e4fae;
+      --teal: #00a78e;
+      --orange: #f26b38;
+      --red: #d64545;
+      --yellow: #f5bd45;
+      --navy: #101828;
+      --shadow: 0 16px 50px rgba(16, 24, 40, .08);
+    }
+
+    * { box-sizing: border-box; }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      margin: 0;
+      color: var(--ink);
+      background: var(--paper);
+      font-family: -apple-system, BlinkMacSystemFont, "Hiragino Kaku Gothic ProN", "Yu Gothic", "Meiryo", sans-serif;
+      line-height: 1.85;
+      letter-spacing: .015em;
+    }
+
+    a { color: var(--blue-deep); text-underline-offset: 3px; }
+    a:hover { color: var(--orange); }
+    p { margin: 0 0 1.05rem; }
+    strong { color: var(--ink); }
+
+    .site-header {
+      background:
+        radial-gradient(circle at 85% 16%, rgba(23, 105, 224, .32), transparent 30%),
+        linear-gradient(135deg, #0b1220 0%, #101828 52%, #162b4b 100%);
+      color: #fff;
+      overflow: hidden;
+    }
+
+    .header-inner, .main, .site-footer-inner {
+      width: min(1120px, calc(100% - 40px));
+      margin: 0 auto;
+    }
+
+    .header-inner { padding: 72px 0 84px; position: relative; }
+    .header-inner::after {
+      content: "";
+      position: absolute;
+      width: 340px;
+      height: 340px;
+      right: -110px;
+      bottom: -170px;
+      border: 1px solid rgba(255,255,255,.16);
+      border-radius: 50%;
+      box-shadow: 0 0 0 28px rgba(255,255,255,.025), 0 0 0 58px rgba(255,255,255,.018);
+      pointer-events: none;
+    }
+
+    .eyebrow, .section-kicker, .metric-label, .source-label, .chip, .tag {
+      font-size: .72rem;
+      font-weight: 800;
+      letter-spacing: .11em;
+      text-transform: uppercase;
+    }
+
+    .eyebrow { color: #99c0ff; margin-bottom: 1.1rem; }
+    h1, h2, h3 { line-height: 1.25; letter-spacing: -.035em; }
+    h1 { max-width: 850px; margin: 0 0 1.25rem; font-size: clamp(2.2rem, 5vw, 4.7rem); font-weight: 780; }
+    .dek { max-width: 760px; color: #d9e5f7; font-size: clamp(1.03rem, 2vw, 1.28rem); line-height: 1.8; }
+    .dek strong { color: #fff; }
+
+    .hero-meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 2.2rem;
+      position: relative;
+      z-index: 1;
+    }
+
+    .chip {
+      border: 1px solid rgba(255,255,255,.22);
+      border-radius: 999px;
+      padding: 7px 12px;
+      color: #d9e5f7;
+      background: rgba(255,255,255,.07);
+    }
+
+    .chip.hot { color: #fff5d8; border-color: rgba(245,189,69,.55); background: rgba(245,189,69,.12); }
+
+    .main { padding: 52px 0 80px; }
+
+    .lead-grid {
+      display: grid;
+      grid-template-columns: 1.3fr .7fr;
+      gap: 22px;
+      margin-top: -28px;
+      position: relative;
+      z-index: 2;
+    }
+
+    .card {
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: 22px;
+      box-shadow: var(--shadow);
+    }
+
+    .question-card { padding: 30px 32px; border-top: 4px solid var(--orange); }
+    .question-card h2 { font-size: 1.5rem; margin: .3rem 0 .8rem; }
+    .question-card p:last-child { margin-bottom: 0; }
+    .question-mark { color: var(--orange); font-weight: 900; }
+
+    .snapshot-card { padding: 26px 28px; color: #fff; background: #13233d; border-color: #13233d; }
+    .snapshot-card .metric-label { color: #99c0ff; }
+    .snapshot-price { margin: 8px 0 3px; font-size: 2.6rem; font-weight: 780; letter-spacing: -.06em; }
+    .snapshot-change { color: #8fe4cb; font-weight: 750; }
+    .snapshot-note { color: #b8c9df; font-size: .82rem; line-height: 1.6; margin-top: 1.15rem; }
+
+    .section { margin-top: 78px; scroll-margin-top: 24px; }
+    .section-head { display: flex; align-items: flex-end; justify-content: space-between; gap: 24px; margin-bottom: 22px; }
+    .section-kicker { color: var(--blue); margin-bottom: .55rem; }
+    h2 { margin: 0; font-size: clamp(1.7rem, 3vw, 2.55rem); }
+    .section-intro { max-width: 725px; color: #475467; margin: .9rem 0 0; }
+    .section-number { color: #d0d5dd; font-size: 4rem; font-weight: 850; line-height: .8; letter-spacing: -.08em; }
+
+    .toc { padding: 20px 24px; margin-top: 34px; background: #f0f5ff; border: 1px solid #d9e7ff; border-radius: 16px; }
+    .toc-title { color: var(--blue-deep); font-weight: 800; margin-bottom: 8px; }
+    .toc ol { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px 18px; padding-left: 22px; margin: 0; }
+    .toc li { padding-left: 4px; font-size: .9rem; }
+
+    .fact-grid, .analysis-grid, .scenario-grid { display: grid; gap: 16px; }
+    .fact-grid { grid-template-columns: repeat(4, 1fr); }
+    .fact { padding: 21px 20px; background: #fff; border: 1px solid var(--line); border-radius: 16px; }
+    .fact .metric-label { color: var(--muted); }
+    .fact-value { margin: 6px 0 2px; font-size: 1.8rem; font-weight: 800; letter-spacing: -.05em; }
+    .fact-note { color: var(--muted); font-size: .82rem; line-height: 1.55; }
+    .fact.accent-blue { border-top: 4px solid var(--blue); }
+    .fact.accent-teal { border-top: 4px solid var(--teal); }
+    .fact.accent-orange { border-top: 4px solid var(--orange); }
+    .fact.accent-yellow { border-top: 4px solid var(--yellow); }
+
+    .callout {
+      padding: 22px 24px;
+      border-radius: 16px;
+      border-left: 5px solid var(--blue);
+      background: #eef5ff;
+      margin: 22px 0;
+    }
+    .callout p:last-child { margin-bottom: 0; }
+    .callout.warn { border-color: var(--orange); background: #fff5ee; }
+    .callout.muted { border-color: #98a2b3; background: #f2f4f7; }
+
+    .figure-card { padding: 24px 24px 20px; margin-top: 24px; overflow: hidden; }
+    .figure-title { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; margin-bottom: 4px; }
+    .figure-title h3 { font-size: 1.1rem; margin: 0; }
+    .figure-unit { color: var(--muted); font-size: .78rem; }
+    .figure-caption { color: var(--muted); font-size: .79rem; line-height: 1.65; margin-top: 10px; }
+    .figure-caption a { white-space: nowrap; }
+
+    svg.chart { display: block; width: 100%; height: auto; min-height: 250px; margin-top: 12px; overflow: visible; }
+    .chart .grid-line { stroke: #e9edf3; stroke-width: 1; }
+    .chart .axis-label, .chart .y-label { fill: #667085; font-size: 12px; font-family: inherit; }
+    .chart .legend-label { fill: #344054; font-size: 12px; font-family: inherit; font-weight: 700; }
+    .chart .baseline { stroke: #98a2b3; stroke-width: 1.2; stroke-dasharray: 5 5; }
+    .chart .dot { stroke: #fff; stroke-width: 2; }
+    .chart .bar-label { fill: #475467; font-size: 11px; font-family: inherit; font-weight: 700; }
+
+    .table-wrap { overflow-x: auto; margin-top: 18px; }
+    table { width: 100%; border-collapse: collapse; font-size: .9rem; background: #fff; }
+    th, td { padding: 12px 13px; border-bottom: 1px solid var(--line); text-align: right; white-space: nowrap; }
+    th:first-child, td:first-child { text-align: left; }
+    th { color: #475467; font-size: .74rem; letter-spacing: .05em; background: #f8fafc; }
+    tr:last-child td { border-bottom: 0; }
+    .positive { color: #087f68; font-weight: 750; }
+    .negative { color: var(--red); font-weight: 750; }
+
+    .mechanism {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 0;
+      margin-top: 24px;
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      overflow: hidden;
+      background: #fff;
+    }
+    .mechanism-step { min-height: 208px; padding: 24px 22px; position: relative; border-right: 1px solid var(--line); }
+    .mechanism-step:last-child { border-right: 0; }
+    .mechanism-step::after { content: "→"; position: absolute; right: -13px; top: 50%; transform: translateY(-50%); width: 25px; height: 25px; color: #fff; background: var(--blue); border-radius: 50%; text-align: center; line-height: 23px; font-weight: 800; z-index: 1; }
+    .mechanism-step:last-child::after { display: none; }
+    .step-no { color: var(--blue); font-size: .73rem; font-weight: 850; letter-spacing: .1em; }
+    .mechanism-step h3 { margin: .55rem 0 .55rem; font-size: 1.1rem; }
+    .mechanism-step p { color: #667085; font-size: .88rem; line-height: 1.65; }
+    .equation { margin: 25px 0 0; padding: 21px 24px; text-align: center; color: #fff; background: var(--navy); border-radius: 16px; font-size: clamp(1.05rem, 2.4vw, 1.45rem); font-weight: 750; letter-spacing: .01em; }
+    .equation small { display: block; color: #b8c9df; font-size: .78rem; font-weight: 450; margin-top: 4px; }
+
+    .analysis-grid { grid-template-columns: repeat(2, 1fr); }
+    .analysis-card { padding: 25px 26px; background: #fff; border: 1px solid var(--line); border-radius: 18px; }
+    .analysis-card.wide { grid-column: 1 / -1; }
+    .analysis-card h3 { margin: .55rem 0 .72rem; font-size: 1.25rem; }
+    .analysis-card p:last-child { margin-bottom: 0; }
+    .tag { display: inline-block; padding: 4px 8px; border-radius: 5px; color: var(--blue-deep); background: #eaf2ff; }
+    .tag.risk { color: #a84520; background: #fff0e8; }
+    .tag.neutral { color: #475467; background: #f2f4f7; }
+    .analysis-card ul { padding-left: 1.2rem; margin: .6rem 0 0; }
+    .analysis-card li { margin: .42rem 0; }
+    .analysis-card li::marker { color: var(--blue); }
+
+    .mini-metrics { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: 18px; }
+    .mini-metric { padding: 13px 14px; border-radius: 12px; background: #f8fafc; }
+    .mini-metric .value { display: block; font-size: 1.28rem; font-weight: 800; letter-spacing: -.05em; }
+    .mini-metric .label { display: block; color: var(--muted); font-size: .75rem; line-height: 1.45; }
+
+    .comparison-lead { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; align-items: stretch; }
+    .comparison-note { padding: 24px; border-radius: 18px; background: #fff; border: 1px solid var(--line); }
+    .comparison-note h3 { margin: 0 0 .7rem; font-size: 1.2rem; }
+    .comparison-note p:last-child { margin-bottom: 0; }
+    .comparison-table td:first-child { font-weight: 750; }
+    .comparison-table .company { display: flex; align-items: center; gap: 9px; }
+    .company-dot { width: 10px; height: 10px; border-radius: 50%; background: var(--blue); display: inline-block; }
+    .company-dot.msft { background: #8b5cf6; }
+    .company-dot.nvda { background: #76b900; }
+    .company-dot.spy { background: #f59e0b; }
+
+    .timeline { position: relative; display: grid; gap: 14px; margin-top: 24px; }
+    .timeline::before { content: ""; position: absolute; left: 91px; top: 22px; bottom: 22px; width: 2px; background: #c9dafa; }
+    .timeline-item { display: grid; grid-template-columns: 76px 30px 1fr; align-items: start; gap: 0 15px; position: relative; }
+    .timeline-date { padding-top: 7px; color: var(--blue-deep); font-size: .78rem; font-weight: 850; line-height: 1.4; text-align: right; }
+    .timeline-dot { width: 14px; height: 14px; margin: 10px 0 0 8px; border: 3px solid var(--paper); border-radius: 50%; background: var(--blue); box-shadow: 0 0 0 2px var(--blue); z-index: 1; }
+    .timeline-item.macro .timeline-dot { background: var(--orange); box-shadow: 0 0 0 2px var(--orange); }
+    .timeline-item.earnings .timeline-dot { background: var(--teal); box-shadow: 0 0 0 2px var(--teal); }
+    .timeline-content { padding: 15px 17px; border: 1px solid var(--line); border-radius: 13px; background: #fff; }
+    .timeline-content strong { display: block; margin-bottom: 2px; }
+    .timeline-content span { color: var(--muted); font-size: .8rem; }
+
+    .scenario-grid { grid-template-columns: repeat(3, 1fr); margin-top: 24px; }
+    .scenario { padding: 25px 24px; border: 1px solid var(--line); border-radius: 18px; background: #fff; }
+    .scenario h3 { margin: .55rem 0 .75rem; font-size: 1.25rem; }
+    .scenario p { font-size: .91rem; }
+    .scenario ul { padding-left: 1.1rem; margin: .7rem 0 0; font-size: .87rem; }
+    .scenario.bull { border-top: 5px solid var(--teal); }
+    .scenario.base { border-top: 5px solid var(--yellow); }
+    .scenario.bear { border-top: 5px solid var(--red); }
+    .scenario .probability { color: var(--muted); font-size: .76rem; font-weight: 800; letter-spacing: .06em; }
+
+    .answer-box { margin-top: 28px; padding: 28px 30px; border: 1px solid #b8d4ff; border-radius: 18px; background: linear-gradient(135deg, #edf5ff 0%, #fff 80%); }
+    .answer-box h3 { margin: 0 0 .7rem; font-size: 1.35rem; }
+    .answer-box p:last-child { margin-bottom: 0; }
+
+    .sources { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; margin-top: 22px; }
+    .source { padding: 17px 18px; background: #fff; border: 1px solid var(--line); border-radius: 13px; }
+    .source-label { color: var(--muted); font-size: .65rem; }
+    .source a { display: block; margin-top: 3px; font-weight: 750; line-height: 1.45; }
+    .source p { color: var(--muted); font-size: .78rem; line-height: 1.55; margin: 4px 0 0; }
+
+    .footnote { color: var(--muted); font-size: .79rem; line-height: 1.7; }
+    .site-footer { color: #c3d0e1; background: var(--navy); }
+    .site-footer-inner { padding: 34px 0 45px; }
+    .site-footer p { max-width: 800px; font-size: .8rem; line-height: 1.7; }
+    .site-footer a { color: #b5d2ff; }
+
+    @media (max-width: 860px) {
+      .lead-grid, .comparison-lead { grid-template-columns: 1fr; }
+      .fact-grid { grid-template-columns: repeat(2, 1fr); }
+      .mechanism { grid-template-columns: repeat(2, 1fr); }
+      .mechanism-step:nth-child(2) { border-right: 0; }
+      .mechanism-step:nth-child(-n+2) { border-bottom: 1px solid var(--line); }
+      .mechanism-step:nth-child(2)::after { display: none; }
+      .mechanism-step:nth-child(3)::after { display: block; }
+      .mechanism-step:nth-child(4) { border-right: 0; }
+      .analysis-grid { grid-template-columns: 1fr; }
+      .analysis-card.wide { grid-column: auto; }
+      .scenario-grid { grid-template-columns: 1fr; }
+      .toc ol { grid-template-columns: repeat(2, 1fr); }
+    }
+
+    @media (max-width: 560px) {
+      .header-inner, .main, .site-footer-inner { width: min(100% - 28px, 1120px); }
+      .header-inner { padding: 52px 0 70px; }
+      .main { padding-top: 38px; }
+      .fact-grid, .mini-metrics, .sources { grid-template-columns: 1fr; }
+      .mechanism { display: block; }
+      .mechanism-step { min-height: auto; border-right: 0; border-bottom: 1px solid var(--line); }
+      .mechanism-step:last-child { border-bottom: 0; }
+      .mechanism-step::after { content: "↓"; right: auto; left: 50%; top: auto; bottom: -13px; transform: translateX(-50%); }
+      .mechanism-step:nth-child(2)::after { display: block; }
+      .mechanism-step:nth-child(3)::after { display: block; }
+      .mechanism-step:last-child::after { display: none; }
+      .section-head { align-items: flex-start; }
+      .section-number { display: none; }
+      .figure-card, .question-card, .snapshot-card { padding: 20px; }
+      .timeline::before { left: 66px; }
+      .timeline-item { grid-template-columns: 52px 28px 1fr; gap: 0 10px; }
+      .timeline-date { font-size: .7rem; }
+      .timeline-dot { margin-left: 7px; }
+      th, td { padding: 10px 9px; font-size: .8rem; }
+    }
+
+    @media print {
+      .site-header { color: #000; background: #fff; border-bottom: 2px solid #000; }
+      .dek, .chip { color: #000; }
+      .chip { border-color: #999; background: #fff; }
+      .snapshot-card { color: #000; background: #fff; border: 1px solid #999; }
+      .snapshot-card .metric-label, .snapshot-note { color: #444; }
+      .section { margin-top: 40px; }
+      .card, .fact, .analysis-card, .scenario, .source, .timeline-content { box-shadow: none; break-inside: avoid; }
+      a { color: #000; }
+    }
+  </style>
+</head>
+<body>
+  <header class="site-header">
+    <div class="header-inner">
+      <div class="eyebrow">MARKET NOTE / 2026.09.16</div>
+      <h1>Apple株はなぜ上がったのか。<br>「期待」と「利益」を分解する</h1>
+      <p class="dek">iPhoneの会社が、Services、AI、次の製品サイクル、そして資本政策を一つの物語に束ねている。だが、<strong>株価の上昇は、業績の上昇と同じ意味ではない</strong>。このブログでは、数字・仕組み・死角を順番にほどく。</p>
+      <div class="hero-meta">
+        <span class="chip hot">AAPL / $333.79</span>
+        <span class="chip">参考時点 2026/09/16 14:00 UTC</span>
+        <span class="chip">データは変動します</span>
+      </div>
+    </div>
+  </header>
+
+  <main class="main">
+    <div class="lead-grid">
+      <section class="card question-card" aria-labelledby="question-title">
+        <div class="section-kicker">THE QUESTION</div>
+        <h2 id="question-title">なぜ、いまApple株なのか？<span class="question-mark">●</span></h2>
+        <p>2026年9月16日14:00 UTC時点の参考値で、AAPLは<strong>$333.79</strong>、時価総額は約<strong>$4.91兆</strong>、PERは約<strong>38.3倍</strong>。Yahoo Financeの9月15日時点データでは、1年リターンは<strong>+40.50%</strong>で、S&amp;P 500の<strong>+14.67%</strong>を大きく上回る。</p>
+        <p>ここで立てる問いは単純だ。<strong>この上昇は、利益の実力を反映した持続的な再評価なのか、それとも新製品・AI・CEO交代への期待が先行したリレーティングなのか。</strong></p>
+      </section>
+      <aside class="snapshot-card" aria-label="Apple株価スナップショット">
+        <div class="metric-label">INTRADAY SNAPSHOT</div>
+        <div class="snapshot-price">$333.79</div>
+        <div class="snapshot-change">+0.74% / 参考値</div>
+        <div class="snapshot-note">株価・時価総額・PERは同一時点の市場データから取得。終値ではないため、記事公開後に更新される可能性があります。</div>
+      </aside>
+    </div>
+
+    <nav class="toc" aria-label="目次">
+      <div class="toc-title">この記事の読み方</div>
+      <ol>
+        <li><a href="#facts">上昇を数字で確認</a></li>
+        <li><a href="#mechanism">株価が動く仕組み</a></li>
+        <li><a href="#analysis">上昇の中身と死角</a></li>
+        <li><a href="#compare">他社との比較</a></li>
+        <li><a href="#scenarios">次の審判日と3シナリオ</a></li>
+      </ol>
+    </nav>
+
+    <section class="section" id="facts" aria-labelledby="facts-title">
+      <div class="section-head">
+        <div>
+          <div class="section-kicker">01 / FACTS</div>
+          <h2 id="facts-title">まず、何が起きたのか</h2>
+          <p class="section-intro">直近のApple株は、一直線に上がったわけではない。決算の強さを確認しながら、供給制約とAIへの不安で売られ、その後、新製品サイクルと業績の再加速に期待が戻った。</p>
+        </div>
+        <div class="section-number">01</div>
+      </div>
+
+      <div class="fact-grid">
+        <div class="fact accent-blue"><div class="metric-label">1年リターン</div><div class="fact-value">+40.50%</div><div class="fact-note">AAPL。2026/09/15時点。S&amp;P 500は+14.67%。</div></div>
+        <div class="fact accent-teal"><div class="metric-label">FY26 Q1売上</div><div class="fact-value">$143.8B</div><div class="fact-note">前年同期比+16%。祝祭期を含む四半期。</div></div>
+        <div class="fact accent-orange"><div class="metric-label">Services Q3売上</div><div class="fact-value">$30.7B</div><div class="fact-note">FY26 Q3。四半期で約$300億規模。</div></div>
+        <div class="fact accent-yellow"><div class="metric-label">現在のPER</div><div class="fact-value">約38.3倍</div><div class="fact-note">2026/09/16 14:00 UTCの参考値。期待も価格に含まれる。</div></div>
+      </div>
+
+      <div class="callout">
+        <p><strong>異例のポイント：</strong>Reutersは2026年7月、供給制約と弱い見通しを受けてApple株が一時ほぼ10%下落したと報じた。その後の株価は、単なる「新製品発表後の上昇」ではなく、<strong>一度崩れた実行力への信頼を、決算と製品イベントで取り戻す動き</strong>として読むほうが正確だ。</p>
+      </div>
+
+      <figure class="card figure-card" aria-labelledby="return-chart-title">
+        <div class="figure-title"><h3 id="return-chart-title">グラフ1：直近1年の株価推移（基準値100）</h3><span class="figure-unit">2025/09 = 100</span></div>
+        <svg class="chart" id="return-chart" role="img" aria-label="Apple、Microsoft、NVIDIA、S&P 500の直近1年の月次調整後価格を2025年9月を100として比較した折れ線グラフ"></svg>
+        <div class="table-wrap"><table id="return-table" aria-label="直近1年の株価推移の要約"><thead><tr><th>銘柄</th><th>2025/09</th><th>2026/03</th><th>2026/09</th><th>期間の変化</th></tr></thead><tbody></tbody></table></div>
+        <figcaption class="figure-caption">月次の調整後価格を基準月=100に正規化。2026年9月は9月16日時点の最新観測値。Yahoo Financeの1年リターンとは、起点・時点・データソースが異なるため一致しない。価格系列：<a href="https://www.digrin.com/stocks/detail/AAPL/price" target="_blank" rel="noopener">Digrin（AAPL）</a>、<a href="https://www.digrin.com/stocks/detail/SPY/price" target="_blank" rel="noopener">Digrin（比較系列）</a>。</figcaption>
+      </figure>
+
+      <div class="callout muted">
+        <p><strong>読み方：</strong>Appleはこの1年でS&amp;P 500を上回っただけでなく、Microsoftより明確に強かった。一方、NVIDIAのようなAI半導体株と同じ上昇物語ではない。Appleの上昇は、AI売上の直接爆発というより、<strong>既存の巨大な利益基盤に新しい成長の選択肢が上乗せされる期待</strong>に近い。</p>
+      </div>
+    </section>
+
+    <section class="section" id="mechanism" aria-labelledby="mechanism-title">
+      <div class="section-head">
+        <div>
+          <div class="section-kicker">02 / MECHANISM</div>
+          <h2 id="mechanism-title">株価の上昇を、4つの部品に分ける</h2>
+          <p class="section-intro">ニュースを「良い」「悪い」で終わらせないために、株価を利益と期待の積として捉える。Appleの場合、4つの部品が同じ方向を向いた時に、値動きが大きくなる。</p>
+        </div>
+        <div class="section-number">02</div>
+      </div>
+
+      <div class="equation">株価 ≈ 1株利益（EPS） × 株価収益率（PER）<small>利益が増えるだけでなく、「その利益を何倍で評価するか」が変わる</small></div>
+
+      <div class="mechanism" id="driver-diagram" aria-label="Apple株価上昇の仕組み">
+        <div class="mechanism-step"><div class="step-no">01 / EARNINGS</div><h3>売上・利益</h3><p>iPhone、Mac、Servicesの売上が伸びる。粗利率が保たれると、売上以上に利益が伸びる余地がある。</p></div>
+        <div class="mechanism-step"><div class="step-no">02 / SHARES</div><h3>1株利益</h3><p>自社株買いで発行済み株式数が減れば、同じ純利益でもEPSは上がる。株主還元の期待も評価を支える。</p></div>
+        <div class="mechanism-step"><div class="step-no">03 / EXPECTATION</div><h3>PERの再評価</h3><p>AI、新製品、Servicesの成長が長く続くと見られるほど、投資家は将来利益に高い倍率を払う。</p></div>
+        <div class="mechanism-step"><div class="step-no">04 / MACRO</div><h3>金利・需給</h3><p>金利低下や大型株への資金流入はPERを押し上げる。逆に長期金利上昇は、同じ利益でも株価を抑える。</p></div>
+      </div>
+
+      <p>ここで重要なのは、<strong>自社株買いと量的緩和を混同しないこと</strong>だ。自社株買いは企業が現金で株式を買い、株式数を減らす資本政策。一方、量的緩和は中央銀行が国債などを買い、市場全体の金利・流動性を動かす政策である。Appleの買い戻しはEPSの分母に効くが、中央銀行のように市場全体へ新しいお金を供給するものではない。</p>
+      <p>同じ理由で、「買い戻しがあるから株価は必ず上がる」も誤りだ。利益の成長が止まれば、PERが下がるだけで買い戻し効果は相殺される。株価は、<strong>利益の伸び、将来の期待、金利、需給</strong>の合成値である。</p>
+    </section>
+
+    <section class="section" id="analysis" aria-labelledby="analysis-title">
+      <div class="section-head">
+        <div>
+          <div class="section-kicker">03 / DEEP DIVE</div>
+          <h2 id="analysis-title">上昇の中身と、まだ見えていない死角</h2>
+          <p class="section-intro">強気材料だけを並べると、投資判断ではなく広告になる。Apple株の上昇を支える材料ごとに、「何が本当に強いのか」と「どこで崩れるのか」を並べてみる。</p>
+        </div>
+        <div class="section-number">03</div>
+      </div>
+
+      <div class="analysis-grid">
+        <article class="analysis-card">
+          <span class="tag">強さ：決算</span>
+          <h3>FY26 Q1〜Q3は、売上とEPSが同時に伸びた</h3>
+          <p>AppleのFY2026 Q1〜Q3売上は、それぞれ<strong>$143.756B、$111.184B、$109.417B</strong>。前年同期比は<strong>+16%、+17%、+16%</strong>で、EPSも<strong>+19%、+22%、+29%</strong>だった。これは「期待だけ」の上昇ではなく、少なくとも直近の実績が株価を支えていることを示す。</p>
+          <div class="mini-metrics"><div class="mini-metric"><span class="value">+16%</span><span class="label">Q1 売上成長</span></div><div class="mini-metric"><span class="value">+17%</span><span class="label">Q2 売上成長</span></div><div class="mini-metric"><span class="value">+16%</span><span class="label">Q3 売上成長</span></div></div>
+          <p class="footnote"><a href="https://www.apple.com/newsroom/2026/01/apple-reports-first-quarter-results/" target="_blank" rel="noopener">Apple Q1</a>、<a href="https://www.apple.com/newsroom/2026/04/apple-reports-second-quarter-results/" target="_blank" rel="noopener">Q2</a>、<a href="https://www.apple.com/newsroom/2026/07/apple-reports-third-quarter-results/" target="_blank" rel="noopener">Q3発表</a>より。</p>
+        </article>
+
+        <article class="analysis-card">
+          <span class="tag">強さ：Services</span>
+          <h3>「端末を売る会社」から、利用基盤を収益化する会社へ</h3>
+          <p>Services売上はFY26 Q1の<strong>$30.013B</strong>からQ2の<strong>$30.976B</strong>、Q3の<strong>$30.739B</strong>へ。四半期ごとの季節性はあるが、約300億ドルの規模が続く。Q3では全社売上の約28%を占めた。</p>
+          <p>2.5 billion超のアクティブデバイスが、App Store、クラウド、決済、サブスクリプションの母集団になる。この「 installed base 」が高い評価を受ける理由だ。ただしServicesはiPhoneの利用者・決済・OSに依存するため、完全に独立した成長エンジンではない。規制や手数料率の変化も死角になる。</p>
+          <p class="footnote"><a href="https://www.apple.com/newsroom/2026/07/apple-reports-third-quarter-results/" target="_blank" rel="noopener">Apple Q3決算</a>より。Q1〜Q3のServices比率は季節性を含む単純計算。</p>
+        </article>
+
+        <article class="analysis-card">
+          <span class="tag">期待：製品・AI</span>
+          <h3>iPhone 18とAIは「売上」より先にPERを動かす</h3>
+          <p>Apple公式サイトでは、iPhone 18 Proは<strong>9月18日</strong>発売、折りたたみ型とされるiPhone Duoは<strong>10月16日予約開始、10月23日発売</strong>と案内されている。新しい製品サイクルは、買い替え需要、平均販売価格、Servicesの利用増を一度に連想させる。</p>
+          <p>さらにJohn Ternus氏が9月1日にCEOへ就任し、Tim Cook氏はExecutive Chairmanになった。交代が滑らかに見えれば「経営の継続性」が安心材料になる。しかし、AI機能が実際の利用頻度や課金に変わるまで、株価が先行する時間差は長い。</p>
+          <p class="footnote"><a href="https://www.apple.com/" target="_blank" rel="noopener">Apple公式サイト</a>、<a href="https://www.apple.com/newsroom/2026/04/tim-cook-to-become-apple-executive-chairman-john-ternus-to-become-apple-ceo/" target="_blank" rel="noopener">CEO交代発表</a>より。</p>
+        </article>
+
+        <article class="analysis-card">
+          <span class="tag risk">死角：一過性の押し上げ</span>
+          <h3>Q3の粗利率とEPSには、関税還付が混ざっている</h3>
+          <p>FY26 Q3の粗利率は<strong>50.1%</strong>だったが、Appleの発表では関税還付が約2ポイントの押し上げ要因になった。また、EPSには1株あたり<strong>$0.11</strong>の関税還付効果が含まれる。</p>
+          <p>つまり、Q3の数字をそのまま次の四半期へ外挿すると危険だ。次の決算では、還付効果を除いた粗利率、部材コスト、値上げで需要が鈍らないかを分けて見る必要がある。</p>
+          <p class="footnote"><a href="https://www.apple.com/newsroom/2026/07/apple-reports-third-quarter-results/" target="_blank" rel="noopener">Apple Q3決算リリース</a>の記載に基づく整理。</p>
+        </article>
+
+        <article class="analysis-card">
+          <span class="tag neutral">資本政策</span>
+          <h3>自社株買いは追い風だが、万能の床ではない</h3>
+          <p>FY26の9か月累計でAppleが使った自社株買いは<strong>$62.094B</strong>。前年同期の<strong>$70.579B</strong>からは減っている。Q2には取締役会が追加で<strong>$100B</strong>の買い戻し枠を承認したが、枠の承認額と実際の買い付け額は別物だ。</p>
+          <p>買い戻しは発行済み株式数を減らし、同じ純利益でもEPSを押し上げる。ただし現金を使うため、将来の研究開発・工場投資・大型買収に回せる資金とのトレードオフがある。高値で買えば、1株価値を高めるどころか資本配分の効率を落とす可能性もある。</p>
+          <p class="footnote"><a href="https://www.apple.com/newsroom/pdfs/fy2026q3/FY26_Q3_Consolidated_Financial_Statements.pdf" target="_blank" rel="noopener">FY26 Q3連結財務諸表</a>、<a href="https://www.apple.com/newsroom/2026/04/apple-reports-second-quarter-results/" target="_blank" rel="noopener">Q2決算発表</a>より。</p>
+        </article>
+
+        <article class="analysis-card">
+          <span class="tag risk">リスク：供給・金利・中国</span>
+          <h3>期待が大きいほど、失望の伝わり方も速い</h3>
+          <p>Reutersは7月、AIデータセンター建設との競争で部材の供給が厳しくなり、Appleの在庫バッファが薄れていると報じた。iPhone需要が強くても、メモリや先端部品のコスト・納期が粗利率を圧迫すれば、利益の伸びは鈍る。</p>
+          <p>Q3のGreater China売上は<strong>$18.816B</strong>。中国市場の需要、競争、規制、為替は、全社の物語を一つの地域から揺らしうる。加えて、長期金利が上がればPERが縮み、業績が良くても株価が伸びない局面がある。</p>
+          <p class="footnote"><a href="https://www.reuters.com/business/retail-consumer/apple-slides-supply-snags-cloud-outlook-putting-iphone-demand-focus-2026-07-31/" target="_blank" rel="noopener">Reuters報道</a>、<a href="https://www.apple.com/newsroom/2026/07/apple-reports-third-quarter-results/" target="_blank" rel="noopener">Apple Q3決算</a>より。</p>
+        </article>
+
+        <article class="analysis-card wide">
+          <span class="tag">数字で確認：売上の構成</span>
+          <h3>Servicesは伸びている。ただし、製品売上との二重計上ではない</h3>
+          <p>次のグラフは、FY26 Q1〜Q3の全社売上とServices売上を同じ単位で示したものだ。Servicesの棒が製品売上に「追加」されるのではなく、全社売上の内側に含まれる。だから見るべきはServicesの絶対額だけでなく、<strong>製品サイクルが落ち着いたときにもServicesがどれだけ下支えするか</strong>である。</p>
+          <figure class="figure-card" style="margin-top:18px; padding:18px 18px 15px;">
+            <div class="figure-title"><h3 id="revenue-chart-title">グラフ2：四半期売上とServices</h3><span class="figure-unit">$bn</span></div>
+            <svg class="chart" id="revenue-chart" role="img" aria-labelledby="revenue-chart-title" aria-label="Apple FY2026第1四半期から第3四半期の全社売上とServices売上"></svg>
+            <figcaption class="figure-caption">Apple公式のFY26 Q1〜Q3決算発表の数値を使用。Q1はホリデー期を含むため、四半期間の単純な季節比較は避ける。</figcaption>
+          </figure>
+        </article>
+      </div>
+    </section>
+
+    <section class="section" id="compare" aria-labelledby="compare-title">
+      <div class="section-head">
+        <div>
+          <div class="section-kicker">04 / RELATIVE VIEW</div>
+          <h2 id="compare-title">Appleは「AI株」なのか：他社と比べる</h2>
+          <p class="section-intro">同じ大型テックでも、利益の出どころと株価の見られ方は違う。比較を入れると、Appleの上昇が「遅れてきたAI熱」なのか「消費者エコシステムの再評価」なのかが見えやすくなる。</p>
+        </div>
+        <div class="section-number">04</div>
+      </div>
+
+      <div class="comparison-lead">
+        <div class="comparison-note"><h3>直近1年：Appleの追い上げ</h3><p>AAPLの1年リターンは+40.50%。Microsoftの+2.75%、NVIDIAの+19.65%、S&amp;P 500の+14.67%を上回った。これはAppleの利益成長が急にゼロから生まれたというより、投資家が「次の成長が見えない」という割引をいったん外した動きと解釈できる。</p></div>
+        <div class="comparison-note"><h3>現在の評価：期待も高い</h3><p>同じ時点の参考スナップショットでは、AAPLのPERは約38.3倍、MSFTは約29.4倍、NVDAは約27.0倍。単純にPERだけで優劣は決まらないが、Appleにはすでに「良い会社」以上の期待が乗っている。期待が乗った株ほど、次の決算で基準を超え続ける必要がある。</p></div>
+      </div>
+
+      <div class="table-wrap card figure-card" style="padding-top:14px;">
+        <table class="comparison-table" aria-label="Appleと比較銘柄の1年リターンとPER"><thead><tr><th>銘柄</th><th>参考株価</th><th>PER</th><th>1年リターン</th><th>主な利益エンジン</th></tr></thead><tbody>
+          <tr><td><span class="company"><i class="company-dot"></i>Apple / AAPL</span></td><td>$333.79</td><td>38.35倍</td><td class="positive">+40.50%</td><td>iPhone・Services・買い戻し</td></tr>
+          <tr><td><span class="company"><i class="company-dot msft"></i>Microsoft / MSFT</span></td><td>$494.71</td><td>29.45倍</td><td>+2.75%</td><td>クラウド・ソフトウェア</td></tr>
+          <tr><td><span class="company"><i class="company-dot nvda"></i>NVIDIA / NVDA</span></td><td>$214.90</td><td>26.97倍</td><td class="positive">+19.65%</td><td>AI半導体サイクル</td></tr>
+          <tr><td><span class="company"><i class="company-dot spy"></i>S&amp;P 500</span></td><td>—</td><td>—</td><td class="positive">+14.67%</td><td>大型株の集合</td></tr>
+        </tbody></table>
+        <p class="figure-caption">1年リターンは2026/09/15時点のYahoo Finance表示。株価・PERは2026/09/16 14:00 UTC時点の参考スナップショットで、取得時点が異なる。PERは各社の利益構成や成長率が違うため、比較の入口にとどめる。</p>
+      </div>
+
+      <figure class="card figure-card" aria-labelledby="five-year-chart-title">
+        <div class="figure-title"><h3 id="five-year-chart-title">グラフ3：5年間の株価指数（基準値100）</h3><span class="figure-unit">2021/09 = 100</span></div>
+        <svg class="chart" id="five-year-chart" role="img" aria-labelledby="five-year-chart-title" aria-label="Apple、Microsoft、NVIDIA、S&P 500の5年間の株価指数を比較した折れ線グラフ"></svg>
+        <div class="table-wrap"><table id="five-year-table" aria-label="5年間の株価指数の要約"><thead><tr><th>銘柄</th><th>2021/09</th><th>2024/09</th><th>2026/09</th><th>5年の変化</th></tr></thead><tbody></tbody></table></div>
+        <figcaption class="figure-caption">年次の9月調整後価格を基準値100に正規化。NVIDIAの上昇幅が突出する一方、Appleは直近1年の再評価が大きい。価格系列：<a href="https://www.digrin.com/stocks/detail/AAPL/price" target="_blank" rel="noopener">Digrin（AAPL）</a>、<a href="https://www.digrin.com/stocks/detail/MSFT/price" target="_blank" rel="noopener">MSFT</a>、<a href="https://www.digrin.com/stocks/detail/NVDA/price" target="_blank" rel="noopener">NVDA</a>、<a href="https://www.digrin.com/stocks/detail/SPY/price" target="_blank" rel="noopener">SPY</a>。</figcaption>
+      </figure>
+
+      <div class="callout warn">
+        <p><strong>比較からの結論：</strong>AppleをNVIDIAの代用品として買うと、見誤る。NVIDIAはAI設備投資のサイクルに利益が直結しやすい。一方、Appleはハードウェアの買い替えと、巨大な利用者基盤からのServices化が中心だ。AppleのAI期待は、半導体のような直接売上ではなく、<strong>端末の買い替え・利用頻度・課金率を押し上げるオプション</strong>として評価されている。</p>
+      </div>
+    </section>
+
+    <section class="section" id="scenarios" aria-labelledby="scenarios-title">
+      <div class="section-head">
+        <div>
+          <div class="section-kicker">05 / NEXT CHECKPOINTS</div>
+          <h2 id="scenarios-title">次の審判日と、3つのシナリオ</h2>
+          <p class="section-intro">株価の未来を当てるより、どの数字が出たら見方を変えるかを先に決める。次に確認するのは、製品の発売日、決算、金利である。</p>
+        </div>
+        <div class="section-number">05</div>
+      </div>
+
+      <div class="timeline" aria-label="Apple株の今後のチェックポイント">
+        <div class="timeline-item"><div class="timeline-date">9/18</div><div class="timeline-dot"></div><div class="timeline-content"><strong>iPhone 18 Pro発売</strong><span>公式サイト記載。初動の在庫・納期・高価格帯の需要を見る。</span></div></div>
+        <div class="timeline-item"><div class="timeline-date">10/16</div><div class="timeline-dot"></div><div class="timeline-content"><strong>iPhone Duo予約開始</strong><span>予約の勢いだけでなく、納期と供給量を分けて確認する。</span></div></div>
+        <div class="timeline-item"><div class="timeline-date">10/23</div><div class="timeline-dot"></div><div class="timeline-content"><strong>iPhone Duo発売</strong><span>新カテゴリーが平均販売価格と買い替え率に寄与するかが焦点。</span></div></div>
+        <div class="timeline-item macro"><div class="timeline-date">10/27–28</div><div class="timeline-dot"></div><div class="timeline-content"><strong>FOMC</strong><span>金利見通しと長期金利。AppleのPERを左右する外部要因。</span></div></div>
+        <div class="timeline-item earnings"><div class="timeline-date">10月下旬</div><div class="timeline-dot"></div><div class="timeline-content"><strong>Apple FY26 Q4決算</strong><span>正式日程は未発表。市場予想では10/29だが、非確定情報として扱う。</span></div></div>
+        <div class="timeline-item macro"><div class="timeline-date">12/08–09</div><div class="timeline-dot"></div><div class="timeline-content"><strong>FOMC</strong><span>年末の金利と、成長株への資金配分を再確認する。</span></div></div>
+      </div>
+      <p class="footnote" style="margin-top:14px;"><a href="https://www.apple.com/" target="_blank" rel="noopener">製品日程：Apple公式サイト</a> / <a href="https://www.federalreserve.gov/monetarypolicy/fomccalendars.htm" target="_blank" rel="noopener">FOMC日程：Federal Reserve公式カレンダー</a> / FY26 Q4決算の正式日程は<a href="https://investor.apple.com/faq/" target="_blank" rel="noopener">Apple Investor Relations</a>で確認する。</p>
+
+      <div class="scenario-grid">
+        <article class="scenario bull"><div class="probability">SCENARIO A / BULL</div><h3>上昇が利益に追いつく</h3><p>iPhone 18 ProとDuoの初動が強く、供給も確保。FY26 Q4で売上成長が続き、Servicesが$30B台を維持、関税還付を除いても粗利率が崩れないケース。</p><ul><li>見る数字：納期、平均販売価格、Services成長率</li><li>株価の読み：高いPERを利益成長が正当化</li></ul></article>
+        <article class="scenario base"><div class="probability">SCENARIO B / BASE</div><h3>期待先行の高値もみ合い</h3><p>製品への関心はあるが、Duoの供給やAI機能の収益化はゆっくり。Servicesと既存製品が下支えする一方、PERは横ばいか小幅に縮むケース。</p><ul><li>見る数字：売上の一桁後半〜低い二桁成長、粗利率</li><li>株価の読み：業績は堅調でも値幅は大きい</li></ul></article>
+        <article class="scenario bear"><div class="probability">SCENARIO C / BEAR</div><h3>成長と倍率が同時に剥がれる</h3><p>予約反応が弱く、部材不足・メモリ価格・関税の影響が粗利率を圧迫。中国売上やServicesも鈍化し、FOMC後に長期金利が上昇するケース。</p><ul><li>見る数字：在庫、粗利率、Greater China、Services</li><li>株価の読み：EPS低下とPER低下が重なる</li></ul></article>
+      </div>
+
+      <div class="answer-box">
+        <h3>結論：Apple株の上昇は、4つの力の合流点</h3>
+        <p>Apple株が上がった理由は、決算の実績だけでも、AIの期待だけでもない。<strong>FY26の売上・EPS成長、Servicesの継続収益、新製品とAIのオプション、資本政策と大型株への資金流入</strong>が、同じ方向に重なったからだ。</p>
+        <p>ただし、現在のPERはすでに高い。次の判断では「iPhoneが売れたか」だけでなく、<strong>関税還付を除いた粗利率、Servicesが製品サイクルを超えて伸びるか、AIが利用と課金に変わったか、そして金利がPERを許すか</strong>を見る。この4点がそろって初めて、今回の上昇を一時的な期待ではなく、利益の再評価と呼べる。</p>
+      </div>
+    </section>
+
+    <section class="section" aria-labelledby="sources-title">
+      <div class="section-head">
+        <div>
+          <div class="section-kicker">SOURCES &amp; NOTES</div>
+          <h2 id="sources-title">出典と読み手への注意</h2>
+        </div>
+      </div>
+      <p class="section-intro">決算・CEO交代・製品日程・FOMCは公式情報を優先し、供給制約や市場の懸念は報道を補助的に使用した。市場データは取得時点により変わるため、記事の数字は「その時点のスナップショット」として読む。</p>
+      <div class="sources">
+        <div class="source"><div class="source-label">APPLE / PRIMARY</div><a href="https://www.apple.com/newsroom/2026/01/apple-reports-first-quarter-results/" target="_blank" rel="noopener">FY2026 Q1決算発表</a><p>売上、EPS、Services、株主還元。</p></div>
+        <div class="source"><div class="source-label">APPLE / PRIMARY</div><a href="https://www.apple.com/newsroom/2026/04/apple-reports-second-quarter-results/" target="_blank" rel="noopener">FY2026 Q2決算発表</a><p>追加$100Bの自社株買い枠など。</p></div>
+        <div class="source"><div class="source-label">APPLE / PRIMARY</div><a href="https://www.apple.com/newsroom/2026/07/apple-reports-third-quarter-results/" target="_blank" rel="noopener">FY2026 Q3決算発表</a><p>粗利率、関税還付、地域別売上。</p></div>
+        <div class="source"><div class="source-label">APPLE IR / PRIMARY</div><a href="https://www.apple.com/newsroom/pdfs/fy2026q3/FY26_Q3_Consolidated_Financial_Statements.pdf" target="_blank" rel="noopener">FY26 Q3連結財務諸表 PDF</a><p>9か月累計、自社株買い、営業キャッシュフロー。</p></div>
+        <div class="source"><div class="source-label">APPLE / PRIMARY</div><a href="https://www.apple.com/newsroom/2026/04/tim-cook-to-become-apple-executive-chairman-john-ternus-to-become-apple-ceo/" target="_blank" rel="noopener">CEO交代発表</a><p>John Ternus氏のCEO就任とTim Cook氏の役割。</p></div>
+        <div class="source"><div class="source-label">MARKET DATA</div><a href="https://finance.yahoo.com/quote/AAPL/" target="_blank" rel="noopener">Yahoo Finance / AAPL</a><p>1年リターン比較の表示。</p></div>
+        <div class="source"><div class="source-label">MARKET DATA</div><a href="https://www.digrin.com/stocks/detail/AAPL/price" target="_blank" rel="noopener">Digrin / AAPL monthly price</a><p>グラフの月次調整後価格系列。</p></div>
+        <div class="source"><div class="source-label">MACRO / PRIMARY</div><a href="https://www.federalreserve.gov/monetarypolicy/fomccalendars.htm" target="_blank" rel="noopener">Federal Reserve / FOMC calendar</a><p>2026年10月・12月の会合日程。</p></div>
+        <div class="source"><div class="source-label">REPORTING</div><a href="https://www.reuters.com/business/retail-consumer/apple-slides-supply-snags-cloud-outlook-putting-iphone-demand-focus-2026-07-31/" target="_blank" rel="noopener">Reuters / 供給制約と見通し</a><p>AIデータセンター需要との部材競争、市場の懸念。</p></div>
+        <div class="source"><div class="source-label">REPORTING</div><a href="https://www.investors.com/news/technology/apple-stock-drops-lukewarm-iphone-18-pro-demand/" target="_blank" rel="noopener">Investor's Business Daily / iPhone需要</a><p>予約反応やSiri AI提供時期に関する市場報道。</p></div>
+      </div>
+      <p class="footnote" style="margin-top:18px;">本稿は情報提供を目的とした解説であり、特定の金融商品を推奨するものではありません。株価・PER・リターンは表示時点や算出方法によって変わります。投資判断は最新の一次資料とご自身の状況を確認のうえで行ってください。</p>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <div class="site-footer-inner">
+      <p><strong style="color:#fff;">Apple株はなぜ上がったのか</strong> — 2026年9月16日版。グラフは外部ライブラリを使わず、HTML内のデータから描画しています。</p>
+      <p>作成時点：2026年9月16日。市場データの時間表記はUTC。</p>
+    </div>
+  </footer>
+
+  <script>
+    const DATA = {
+      recent: {
+        labels: ["2025/09", "2025/10", "2025/11", "2025/12", "2026/01", "2026/02", "2026/03", "2026/04", "2026/05", "2026/06", "2026/07", "2026/08", "2026/09"],
+        raw: {
+          "Apple": [253.69, 269.38, 278.09, 271.12, 258.78, 263.71, 253.34, 270.87, 311.79, 289.11, 308.64, 316.85, 333.26],
+          "Microsoft": [513.72, 513.58, 488.91, 480.57, 427.58, 391.16, 368.68, 406.13, 449.39, 372.32, 463.85, 507.29, 492.16],
+          "NVIDIA": [186.34, 202.23, 176.77, 186.27, 190.90, 176.97, 174.20, 199.34, 210.89, 200.09, 200.75, 220.78, 213.69],
+          "S&P 500": [660.71, 676.46, 677.78, 678.32, 688.31, 682.36, 648.67, 716.81, 754.54, 746.77, 747.03, 766.95, 759.52]
+        },
+        colors: {"Apple": "#1769e0", "Microsoft": "#8b5cf6", "NVIDIA": "#76b900", "S&P 500": "#f59e0b"}
+      },
+      fiveYear: {
+        labels: ["2021/09", "2022/09", "2023/09", "2024/09", "2025/09", "2026/09"],
+        raw: {
+          "Apple": [138.02, 135.55, 168.92, 231.07, 253.69, 333.26],
+          "Microsoft": [270.57, 225.39, 308.52, 423.61, 513.72, 492.16],
+          "NVIDIA": [20.65, 12.11, 43.42, 121.25, 186.34, 213.69],
+          "S&P 500": [402.36, 339.96, 413.28, 562.20, 660.71, 759.52]
+        },
+        colors: {"Apple": "#1769e0", "Microsoft": "#8b5cf6", "NVIDIA": "#76b900", "S&P 500": "#f59e0b"}
+      },
+      financials: [
+        {quarter: "FY26 Q1", revenue: 143.756, services: 30.013},
+        {quarter: "FY26 Q2", revenue: 111.184, services: 30.976},
+        {quarter: "FY26 Q3", revenue: 109.417, services: 30.739}
+      ]
+    };
+
+    const SVG_NS = "http://www.w3.org/2000/svg";
+    function svgNode(tag, attrs, parent) {
+      const el = document.createElementNS(SVG_NS, tag);
+      Object.entries(attrs || {}).forEach(([key, value]) => el.setAttribute(key, String(value)));
+      if (parent) parent.appendChild(el);
+      return el;
+    }
+    function svgText(parent, text, attrs) {
+      const el = svgNode("text", attrs, parent);
+      el.textContent = text;
+      return el;
+    }
+    function normalizedSeries(raw) {
+      return Object.fromEntries(Object.entries(raw).map(([name, values]) => [name, values.map(value => value / values[0] * 100)]));
+    }
+    function formatIndex(value) { return value.toFixed(1); }
+    function drawLineChart(svgId, tableId, dataset, options) {
+      const svg = document.getElementById(svgId);
+      if (!svg) return;
+      svg.replaceChildren();
+      const width = 920, height = 360, left = 62, right = 26, top = 45, bottom = 52;
+      svg.setAttribute("viewBox", `0 0 ${width} ${height}`);
+      const series = normalizedSeries(dataset.raw);
+      const names = Object.keys(series);
+      const values = names.flatMap(name => series[name]);
+      const yMin = options.yMin;
+      const yMax = options.yMax || Math.ceil(Math.max(...values) / 10) * 10;
+      const plotWidth = width - left - right;
+      const plotHeight = height - top - bottom;
+      const x = index => left + (index / (dataset.labels.length - 1)) * plotWidth;
+      const y = value => top + (yMax - value) / (yMax - yMin) * plotHeight;
+      const tickCount = 4;
+
+      svgNode("title", {}, svg).textContent = options.ariaLabel;
+      for (let tick = 0; tick <= tickCount; tick += 1) {
+        const value = yMin + (yMax - yMin) * tick / tickCount;
+        const yy = y(value);
+        svgNode("line", {x1: left, y1: yy, x2: width - right, y2: yy, class: "grid-line"}, svg);
+        svgText(svg, options.tickFormat(value), {x: left - 10, y: yy + 4, class: "y-label", "text-anchor": "end"});
+      }
+      if (options.baseline >= yMin && options.baseline <= yMax) {
+        const yy = y(options.baseline);
+        svgNode("line", {x1: left, y1: yy, x2: width - right, y2: yy, class: "baseline"}, svg);
+      }
+      dataset.labels.forEach((label, index) => {
+        if (dataset.labels.length > 8 && index % 2 !== 0 && index !== dataset.labels.length - 1) return;
+        svgText(svg, label, {x: x(index), y: height - 17, class: "axis-label", "text-anchor": "middle"});
+      });
+      names.forEach((name, seriesIndex) => {
+        const points = series[name].map((value, index) => `${x(index)},${y(value)}`).join(" ");
+        svgNode("polyline", {points, fill: "none", stroke: dataset.colors[name], "stroke-width": 3, "stroke-linejoin": "round", "stroke-linecap": "round"}, svg);
+        series[name].forEach((value, index) => {
+          svgNode("circle", {cx: x(index), cy: y(value), r: index === series[name].length - 1 ? 5 : 3.5, fill: dataset.colors[name], class: "dot"}, svg);
+        });
+        const legendX = left + seriesIndex * 170;
+        svgNode("line", {x1: legendX, y1: 19, x2: legendX + 22, y2: 19, stroke: dataset.colors[name], "stroke-width": 3, "stroke-linecap": "round"}, svg);
+        svgText(svg, name, {x: legendX + 30, y: 23, class: "legend-label"});
+      });
+
+      const table = document.getElementById(tableId);
+      if (!table) return;
+      const body = table.querySelector("tbody");
+      body.replaceChildren();
+      const middleIndex = Number.isInteger(options.middleIndex) ? options.middleIndex : Math.floor((dataset.labels.length - 1) / 2);
+      names.forEach(name => {
+        const tr = document.createElement("tr");
+        const valuesForTable = [name, formatIndex(series[name][0]), formatIndex(series[name][middleIndex]), formatIndex(series[name][series[name].length - 1]), `${formatIndex(series[name][series[name].length - 1] - 100)}%`];
+        valuesForTable.forEach((value, index) => {
+          const cell = document.createElement(index === 0 ? "th" : "td");
+          cell.textContent = value;
+          if (index === 4) cell.className = series[name][series[name].length - 1] >= 100 ? "positive" : "negative";
+          tr.appendChild(cell);
+        });
+        body.appendChild(tr);
+      });
+    }
+    function drawRevenueChart() {
+      const svg = document.getElementById("revenue-chart");
+      if (!svg) return;
+      svg.replaceChildren();
+      const width = 920, height = 335, left = 64, right = 26, top = 44, bottom = 54;
+      const maxValue = 160, plotWidth = width - left - right, plotHeight = height - top - bottom;
+      const x = index => left + (index + .5) / DATA.financials.length * plotWidth;
+      const y = value => top + (maxValue - value) / maxValue * plotHeight;
+      svg.setAttribute("viewBox", `0 0 ${width} ${height}`);
+      svgNode("title", {}, svg).textContent = "Apple FY2026 Q1〜Q3の全社売上とServices売上";
+      for (let tick = 0; tick <= 4; tick += 1) {
+        const value = maxValue * tick / 4;
+        const yy = y(value);
+        svgNode("line", {x1: left, y1: yy, x2: width - right, y2: yy, class: "grid-line"}, svg);
+        svgText(svg, `${value.toFixed(0)}`, {x: left - 10, y: yy + 4, class: "y-label", "text-anchor": "end"});
+      }
+      const barWidth = Math.min(132, plotWidth / 5.2);
+      DATA.financials.forEach((row, index) => {
+        const center = x(index);
+        const barHeight = height - bottom - y(row.revenue);
+        svgNode("rect", {x: center - barWidth / 2, y: y(row.revenue), width: barWidth, height: barHeight, rx: 10, fill: "#dbeafe"}, svg);
+        svgText(svg, `$${row.revenue.toFixed(1)}`, {x: center, y: y(row.revenue) - 9, class: "bar-label", "text-anchor": "middle"});
+        svgText(svg, row.quarter, {x: center, y: height - 18, class: "axis-label", "text-anchor": "middle"});
+      });
+      const points = DATA.financials.map((row, index) => `${x(index)},${y(row.services)}`).join(" ");
+      svgNode("polyline", {points, fill: "none", stroke: "#f26b38", "stroke-width": 4, "stroke-linecap": "round", "stroke-linejoin": "round"}, svg);
+      DATA.financials.forEach((row, index) => {
+        svgNode("circle", {cx: x(index), cy: y(row.services), r: 6, fill: "#f26b38", class: "dot"}, svg);
+        svgText(svg, `$${row.services.toFixed(1)}`, {x: x(index), y: y(row.services) + 22, class: "bar-label", "text-anchor": "middle"});
+      });
+      svgNode("rect", {x: left, y: 15, width: 15, height: 10, rx: 3, fill: "#dbeafe"}, svg);
+      svgText(svg, "全社売上", {x: left + 24, y: 24, class: "legend-label"});
+      svgNode("line", {x1: left + 114, y1: 20, x2: left + 136, y2: 20, stroke: "#f26b38", "stroke-width": 4, "stroke-linecap": "round"}, svg);
+      svgText(svg, "Services", {x: left + 144, y: 24, class: "legend-label"});
+    }
+    function initCharts() {
+      drawLineChart("return-chart", "return-table", DATA.recent, {yMin: 65, yMax: 140, baseline: 100, tickFormat: value => `${value.toFixed(0)}`, ariaLabel: "Apple、Microsoft、NVIDIA、S&P 500の直近1年の株価指数"});
+      drawLineChart("five-year-chart", "five-year-table", DATA.fiveYear, {yMin: 0, yMax: 1100, baseline: 100, middleIndex: 3, tickFormat: value => `${value.toFixed(0)}`, ariaLabel: "Apple、Microsoft、NVIDIA、S&P 500の5年間の株価指数"});
+      drawRevenueChart();
+    }
+    if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", initCharts);
+    else initCharts();
+  </script>
+</body>
+</html>
