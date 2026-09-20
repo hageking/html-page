@@ -1,0 +1,295 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#0f172a">
+<title>状態図の覚え方＋問題210 完全解説</title>
+<style>
+:root{
+  --bg:#f7f8fc;--card:#ffffff;--ink:#172033;--muted:#667085;--line:#e5e7eb;
+  --solid:#7c3aed;--liquid:#0ea5e9;--gas:#f59e0b;--accent:#2563eb;
+  --ok:#059669;--warn:#dc2626;--shadow:0 14px 40px rgba(15,23,42,.08);
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{
+  margin:0;background:linear-gradient(180deg,#f8fbff 0,#f7f8fc 35%,#f7f8fc 100%);
+  color:var(--ink);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Hiragino Sans","Yu Gothic UI","Yu Gothic",Meiryo,sans-serif;
+  line-height:1.8;
+}
+a{color:inherit}
+.wrap{width:min(1100px,calc(100% - 32px));margin:auto}
+.hero{padding:56px 0 26px}
+.hero-card{
+  padding:38px;border:1px solid #dbeafe;border-radius:28px;
+  background:radial-gradient(circle at 85% 10%,#dbeafe 0,transparent 31%),linear-gradient(135deg,#fff,#f8fbff);
+  box-shadow:var(--shadow)
+}
+.kicker{font-size:13px;font-weight:800;letter-spacing:.12em;color:#2563eb;text-transform:uppercase}
+h1{font-size:clamp(30px,6vw,54px);line-height:1.18;margin:10px 0 14px;letter-spacing:-.03em}
+.hero p{font-size:17px;color:#475467;max-width:850px;margin:0}
+.quick{
+  display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:24px
+}
+.quick div{padding:15px 16px;border-radius:16px;background:#fff;border:1px solid #e5e7eb;font-weight:700}
+nav{
+  position:sticky;top:0;z-index:10;background:rgba(247,248,252,.88);backdrop-filter:blur(12px);
+  border-bottom:1px solid rgba(229,231,235,.8)
+}
+nav .inner{display:flex;gap:8px;overflow:auto;padding:10px 0}
+nav a{white-space:nowrap;text-decoration:none;padding:8px 12px;border-radius:999px;background:#fff;border:1px solid #e5e7eb;font-size:14px;font-weight:700}
+section{padding:34px 0}
+h2{font-size:28px;margin:0 0 18px;letter-spacing:-.02em}
+h3{font-size:20px;margin:0 0 10px}
+.grid2{display:grid;grid-template-columns:1.05fr .95fr;gap:22px;align-items:start}
+.card{
+  background:var(--card);border:1px solid var(--line);border-radius:22px;padding:24px;box-shadow:0 8px 28px rgba(15,23,42,.05)
+}
+.big-rule{
+  font-size:clamp(22px,4vw,34px);font-weight:900;line-height:1.5;padding:20px;border-radius:18px;
+  background:#eff6ff;border:1px solid #bfdbfe;margin:14px 0 18px
+}
+.chips{display:flex;flex-wrap:wrap;gap:8px;margin:12px 0}
+.chip{padding:7px 11px;border-radius:999px;font-weight:800;font-size:13px;border:1px solid}
+.solid{color:#6d28d9;background:#f5f3ff;border-color:#ddd6fe}
+.liquid{color:#0369a1;background:#f0f9ff;border-color:#bae6fd}
+.gas{color:#b45309;background:#fffbeb;border-color:#fde68a}
+svg{width:100%;height:auto;display:block}
+.legend{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:12px}
+.legend div{padding:10px;border-radius:12px;text-align:center;font-weight:800;font-size:14px}
+.note{padding:14px 16px;border-left:4px solid #3b82f6;background:#eff6ff;border-radius:10px;margin:14px 0}
+.warning{padding:14px 16px;border-left:4px solid #f59e0b;background:#fffbeb;border-radius:10px;margin:14px 0}
+.table-wrap{overflow:auto;border-radius:16px;border:1px solid var(--line)}
+table{width:100%;border-collapse:collapse;min-width:680px;background:#fff}
+th,td{padding:13px 14px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}
+th{background:#f8fafc;font-size:14px}
+tr:last-child td{border-bottom:0}
+.answer{font-weight:900;color:#047857}
+.step{
+  display:grid;grid-template-columns:44px 1fr;gap:14px;padding:15px 0;border-bottom:1px dashed #d0d5dd
+}
+.step:last-child{border-bottom:0}
+.num{width:44px;height:44px;border-radius:14px;display:grid;place-items:center;font-weight:900;background:#111827;color:#fff}
+.quiz{margin-top:16px}
+.q{border:1px solid var(--line);border-radius:16px;padding:16px;margin:10px 0;background:#fff}
+.q button{
+  appearance:none;border:0;background:#111827;color:#fff;padding:9px 13px;border-radius:10px;font-weight:800;cursor:pointer
+}
+.hidden-answer{display:none;margin-top:12px;padding:12px 14px;border-radius:12px;background:#ecfdf3;color:#065f46;font-weight:800}
+footer{padding:40px 0 60px;color:#667085;font-size:14px}
+code{background:#f2f4f7;padding:2px 6px;border-radius:6px}
+@media(max-width:820px){
+  .grid2,.quick{grid-template-columns:1fr}
+  .hero{padding-top:28px}.hero-card{padding:24px}
+  section{padding:26px 0}
+}
+</style>
+</head>
+<body>
+<div class="hero">
+  <div class="wrap">
+    <div class="hero-card">
+      <div class="kicker">Chemistry Study Guide</div>
+      <h1>状態図の場所の覚え方<br>＋ 問題210の解き方</h1>
+      <p>教科書の図を「丸暗記」せず、温度と圧力が粒子に何をするかから判断できるようにする。後半では、問題210の結晶分類を見分ける順番まで整理する。</p>
+      <div class="quick">
+        <div>温度 → 右ほど高い</div>
+        <div>圧力 → 上ほど高い</div>
+        <div>右下ほど気体になりやすい</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<nav>
+  <div class="wrap inner">
+    <a href="#phase">状態図の覚え方</a>
+    <a href="#lines">境界線</a>
+    <a href="#water-co2">水とCO₂</a>
+    <a href="#q210">問題210</a>
+    <a href="#quiz">確認問題</a>
+  </div>
+</nav>
+
+<main>
+<section id="phase">
+  <div class="wrap">
+    <h2>状態図は「右＝熱い、上＝押す」で覚える</h2>
+    <div class="grid2">
+      <div class="card">
+        <div class="big-rule">右へ行く → 温度が上がる → 粒子が動く → <span style="color:var(--gas)">気体</span>に近づく</div>
+        <div class="big-rule">上へ行く → 圧力が上がる → 粒子を押し込む → <span style="color:var(--liquid)">液体</span>・<span style="color:var(--solid)">固体</span>に近づく</div>
+        <p>この2本だけで、状態図の大まかな位置は判断できる。低温側の左は粒子が動きにくいので固体、高温・低圧側の右下は粒子が広がりやすいので気体になる。</p>
+        <div class="chips">
+          <span class="chip solid">左側：固体</span>
+          <span class="chip liquid">中央〜上側：液体</span>
+          <span class="chip gas">右下：気体</span>
+        </div>
+        <div class="note"><strong>最重要の覚え方：</strong>「熱くすると飛ぶ、押すと縮む」。つまり、右へ進むほど気体、上へ進むほど液体や固体が有利になる。</div>
+      </div>
+
+      <div class="card">
+        <h3>模式的な状態図</h3>
+        <svg viewBox="0 0 620 470" role="img" aria-label="固体・液体・気体の状態図">
+          <defs>
+            <marker id="arr" markerWidth="10" markerHeight="10" refX="6" refY="3" orient="auto">
+              <path d="M0,0 L0,6 L7,3 z" fill="#475467"/>
+            </marker>
+          </defs>
+          <rect x="0" y="0" width="620" height="470" rx="20" fill="#fbfdff"/>
+          <path d="M110 360 C185 295,230 262,292 236 L292 72 C230 91,170 125,110 176Z" fill="#f3e8ff" opacity=".88"/>
+          <path d="M292 236 C372 218,454 168,520 88 L520 224 C446 246,370 259,292 236Z" fill="#e0f2fe" opacity=".95"/>
+          <path d="M110 360 C210 317,248 278,292 236 C367 259,454 249,520 224 L520 390 L110 390Z" fill="#fef3c7" opacity=".95"/>
+          <line x1="88" y1="390" x2="550" y2="390" stroke="#475467" stroke-width="3" marker-end="url(#arr)"/>
+          <line x1="110" y1="414" x2="110" y2="42" stroke="#475467" stroke-width="3" marker-end="url(#arr)"/>
+          <text x="490" y="430" font-size="22" font-weight="800" fill="#344054">温度</text>
+          <text x="32" y="60" font-size="22" font-weight="800" fill="#344054">圧力</text>
+          <path d="M110 360 C185 295 230 262 292 236" fill="none" stroke="#334155" stroke-width="5"/>
+          <path d="M292 236 C292 190 302 126 318 68" fill="none" stroke="#334155" stroke-width="5"/>
+          <path d="M292 236 C367 259 454 249 520 224" fill="none" stroke="#334155" stroke-width="5"/>
+          <circle cx="292" cy="236" r="8" fill="#111827"/>
+          <circle cx="520" cy="224" r="8" fill="#111827"/>
+          <text x="166" y="165" font-size="34" font-weight="900" fill="#6d28d9">固体</text>
+          <text x="362" y="158" font-size="34" font-weight="900" fill="#0369a1">液体</text>
+          <text x="380" y="335" font-size="34" font-weight="900" fill="#b45309">気体</text>
+          <text x="305" y="226" font-size="17" font-weight="800">三重点</text>
+          <text x="455" y="207" font-size="17" font-weight="800">臨界点</text>
+        </svg>
+        <div class="legend">
+          <div class="solid">固体</div>
+          <div class="liquid">液体</div>
+          <div class="gas">気体</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="lines">
+  <div class="wrap">
+    <h2>線の上では2つの状態が共存する</h2>
+    <div class="card">
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>境界線</th><th>何と何の境界か</th><th>覚え方</th></tr></thead>
+          <tbody>
+            <tr><td><strong>融解曲線</strong></td><td>固体 ↔ 液体</td><td>「融解」＝固体が溶けて液体になる</td></tr>
+            <tr><td><strong>蒸気圧曲線</strong></td><td>液体 ↔ 気体</td><td>液体から蒸気になる境界</td></tr>
+            <tr><td><strong>昇華圧曲線</strong></td><td>固体 ↔ 気体</td><td>液体を通らず固体から気体へ</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="note">線の上は「ちょうど変化中」と考える。例えば蒸気圧曲線上では液体と気体が共存し、三重点では固体・液体・気体の3つが共存する。</div>
+      <div class="warning"><strong>臨界点：</strong>蒸気圧曲線の終点。臨界点より高温・高圧側では、液体と気体をはっきり区別できない超臨界流体になる。</div>
+    </div>
+  </div>
+</section>
+
+<section id="water-co2">
+  <div class="wrap">
+    <h2>水と二酸化炭素は「1気圧の横線」で見る</h2>
+    <div class="grid2">
+      <div class="card">
+        <h3>水 H₂O</h3>
+        <p>1.013×10<sup>5</sup> Pa、つまりほぼ1気圧で温度を上げると、状態図を横向きに進む。すると<strong>固体 → 液体 → 気体</strong>の順に境界線を通る。</p>
+        <p>教科書の水の状態図では、1気圧で約0℃が融点、約100℃が沸点になる。したがって「横線を引いて、どの領域を通るか」を見ればよい。</p>
+      </div>
+      <div class="card">
+        <h3>二酸化炭素 CO₂</h3>
+        <p>CO₂では1気圧の横線が三重点より低圧側を通るため、液体領域に入れない。そのため、固体を温めると<strong>固体 → 気体</strong>と直接変化する。</p>
+        <p>これがドライアイスの<strong>昇華</strong>。状態図から「なぜ常圧で液体CO₂を見ないのか」まで説明できる。</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="q210">
+  <div class="wrap">
+    <h2>問題210は「結晶を作る粒子」で分類する</h2>
+    <div class="card">
+      <p><strong>問題の物質：</strong>（ア）塩化ナトリウム、（イ）銅、（ウ）二酸化ケイ素、（エ）二酸化炭素、（オ）アンモニア、（カ）塩化アンモニウム、（キ）エタノール、（ク）ヨウ素</p>
+      <div class="step">
+        <div class="num">1</div>
+        <div><h3>まず金属単体を探す</h3><p>銅 Cu は金属原子が自由電子を共有して並ぶので<strong>金属結晶</strong>。したがって（イ）は分子結晶ではない。</p></div>
+      </div>
+      <div class="step">
+        <div class="num">2</div>
+        <div><h3>次にイオンからできた塩を探す</h3><p>NaCl は Na<sup>+</sup> と Cl<sup>−</sup>、NH₄Cl は NH₄<sup>+</sup> と Cl<sup>−</sup> からなるので<strong>イオン結晶</strong>。したがって（ア）（カ）は除外する。</p></div>
+      </div>
+      <div class="step">
+        <div class="num">3</div>
+        <div><h3>巨大な共有結合ネットワークを探す</h3><p>SiO₂ は独立した「SiO₂分子」が並ぶのではなく、SiとOが共有結合で網目状につながる<strong>共有結合の結晶</strong>。したがって（ウ）。</p></div>
+      </div>
+      <div class="step">
+        <div class="num">4</div>
+        <div><h3>残りは分子結晶</h3><p>CO₂、NH₃、エタノール、I₂は、それぞれ独立した分子どうしが分子間力で集まる。よって（エ）（オ）（キ）（ク）が<strong>分子結晶</strong>。</p></div>
+      </div>
+    </div>
+
+    <div class="card" style="margin-top:20px">
+      <h3>210の答え</h3>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>設問</th><th>答え</th><th>理由</th></tr></thead>
+          <tbody>
+            <tr><td>(1) 分子結晶をすべて</td><td class="answer">（エ）（オ）（キ）（ク）</td><td>CO₂、NH₃、エタノール、I₂はいずれも独立した分子が集まった結晶。</td></tr>
+            <tr><td>(2) 水素結合を形成する分子結晶を2つ</td><td class="answer">（オ）（キ）</td><td>NH₃は N–H、エタノールは O–H をもち、分子間で水素結合を作れる。</td></tr>
+            <tr><td>(3) 共有結合の結晶</td><td class="answer">（ウ）</td><td>SiO₂は原子が共有結合で三次元的につながった巨大構造。</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="warning"><strong>ひっかけ：</strong>NH₄Clの NH₄<sup>+</sup> 内部には共有結合があるが、結晶全体は NH₄<sup>+</sup> と Cl<sup>−</sup> の静電気的引力でできているため、分類は<strong>イオン結晶</strong>。</div>
+    </div>
+
+    <div class="card" style="margin-top:20px">
+      <h3>10秒で分類する順番</h3>
+      <div class="big-rule">金属単体 → 金属結晶<br>塩・イオン → イオン結晶<br>SiO₂など巨大網目 → 共有結合の結晶<br>それ以外の独立した分子 → 分子結晶</div>
+      <p>この順番で「除外」していくと、暗記量がかなり減る。問題210では、銅 → NaCl/NH₄Cl → SiO₂ を先に除くと、残り4つがそのまま分子結晶になる。</p>
+    </div>
+  </div>
+</section>
+
+<section id="quiz">
+  <div class="wrap">
+    <h2>最後に30秒チェック</h2>
+    <div class="quiz">
+      <div class="q">
+        <strong>Q1. 状態図で右へ進むと何が上がる？</strong><br><br>
+        <button onclick="reveal(this)">答えを見る</button>
+        <div class="hidden-answer">温度。右へ行くほど粒子の運動が激しくなり、気体側へ進みやすい。</div>
+      </div>
+      <div class="q">
+        <strong>Q2. 境界線の上では物質は1つの状態だけ？</strong><br><br>
+        <button onclick="reveal(this)">答えを見る</button>
+        <div class="hidden-answer">いいえ。境界線上では2つの状態が共存する。三重点では3つが共存する。</div>
+      </div>
+      <div class="q">
+        <strong>Q3. 210で水素結合を作る分子結晶は？</strong><br><br>
+        <button onclick="reveal(this)">答えを見る</button>
+        <div class="hidden-answer">（オ）アンモニア と （キ）エタノール。</div>
+      </div>
+      <div class="q">
+        <strong>Q4. NH₄Clはなぜ分子結晶ではない？</strong><br><br>
+        <button onclick="reveal(this)">答えを見る</button>
+        <div class="hidden-answer">結晶を作る単位が NH₄⁺ と Cl⁻ というイオンだから。結晶全体はイオン結晶。</div>
+      </div>
+    </div>
+  </div>
+</section>
+</main>
+
+<footer>
+  <div class="wrap">高校化学・状態図と結晶分類の復習用。教科書の図は「温度」「圧力」「境界線」を先に読むと判断しやすい。</div>
+</footer>
+
+<script>
+function reveal(btn){
+  const ans=btn.nextElementSibling;
+  const show=ans.style.display!=="block";
+  ans.style.display=show?"block":"none";
+  btn.textContent=show?"答えを隠す":"答えを見る";
+}
+</script>
+</body>
+</html>
