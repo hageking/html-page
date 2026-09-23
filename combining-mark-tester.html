@@ -83,13 +83,13 @@
     </p>
 
     <label for="count">繰り返し回数</label>
-    <input id="count" type="number" min="1" max="1000" value="100" inputmode="numeric" />
+    <input id="count" type="number" min="1" value="100" inputmode="numeric" />
 
     <div class="row">
       <button id="copyBtn" type="button">生成してコピー</button>
     </div>
 
-    <div class="meta" id="status">安全上限: 1000回</div>
+    <div class="meta" id="status">回数を指定してください</div>
   </main>
 
   <script>
@@ -110,8 +110,6 @@
       "\u0327" + // combining cedilla
       "\u0334";  // combining tilde overlay
 
-    const MAX_REPEAT = 1000;
-
     const countEl = document.getElementById("count");
     const statusEl = document.getElementById("status");
     const copyBtn = document.getElementById("copyBtn");
@@ -119,8 +117,7 @@
     copyBtn.addEventListener("click", async () => {
       let count = Number.parseInt(countEl.value, 10);
 
-      if (!Number.isFinite(count)) count = 1;
-      count = Math.max(1, Math.min(MAX_REPEAT, count));
+      if (!Number.isFinite(count) || count < 1) count = 1;
       countEl.value = count;
 
       const payload = unit.repeat(count);
