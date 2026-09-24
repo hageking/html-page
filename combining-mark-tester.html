@@ -83,7 +83,7 @@
     </p>
 
     <label for="count">繰り返し回数</label>
-    <input id="count" type="number" min="1" value="100" inputmode="numeric" />
+    <input id="count" type="number" min="1" max="10000" value="100" inputmode="numeric" />
 
     <div class="row">
       <button id="copyBtn" type="button">生成してコピー</button>
@@ -93,22 +93,22 @@
   </main>
 
   <script>
-    // 1単位: 基底文字 "a" + 複数の結合文字。
-    // 画面描画の検証用として、ブラウザ側で指定回数を生成し、画面には実体を描画しません。
     const unit =
       "a" +
-      "\u0300" + // combining grave accent
-      "\u0301" + // combining acute accent
-      "\u0302" + // combining circumflex accent
-      "\u0303" + // combining tilde
-      "\u0304" + // combining macron
-      "\u0307" + // combining dot above
-      "\u0308" + // combining diaeresis
-      "\u030A" + // combining ring above
-      "\u0323" + // combining dot below
-      "\u0324" + // combining diaeresis below
-      "\u0327" + // combining cedilla
-      "\u0334";  // combining tilde overlay
+      "\u0300" +
+      "\u0301" +
+      "\u0302" +
+      "\u0303" +
+      "\u0304" +
+      "\u0307" +
+      "\u0308" +
+      "\u030A" +
+      "\u0323" +
+      "\u0324" +
+      "\u0327" +
+      "\u0334";
+
+    const MAX_REPEAT = 10000;
 
     const countEl = document.getElementById("count");
     const statusEl = document.getElementById("status");
@@ -117,7 +117,8 @@
     copyBtn.addEventListener("click", async () => {
       let count = Number.parseInt(countEl.value, 10);
 
-      if (!Number.isFinite(count) || count < 1) count = 1;
+      if (!Number.isFinite(count)) count = 1;
+      count = Math.max(1, Math.min(MAX_REPEAT, count));
       countEl.value = count;
 
       const payload = unit.repeat(count);
@@ -127,7 +128,6 @@
         statusEl.textContent =
           `コピーしました: ${count}単位 / ${[...payload].length}コードポイント`;
       } catch {
-        // Clipboard APIが使えない環境向けのフォールバック。
         const ta = document.createElement("textarea");
         ta.value = payload;
         ta.setAttribute("readonly", "");
