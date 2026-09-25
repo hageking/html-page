@@ -1,0 +1,229 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Morph UI States</title>
+<style>
+  :root{
+    --canvas:#f1efea;
+    --card:#ffffff;
+    --ink:#0a0a0a;
+    --muted:#77736d;
+    --line:#dedbd4;
+    --accent:#5b5ff5;
+    --radius:28px;
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{
+    margin:0;
+    color:var(--ink);
+    background:var(--canvas);
+    font-family:Geist,Inter,ui-sans-serif,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+  }
+  button,input{font:inherit}
+  button{color:inherit}
+  .page{max-width:1420px;margin:0 auto;padding:54px 28px 80px}
+  .hero{display:flex;justify-content:space-between;gap:28px;align-items:flex-end;margin-bottom:28px}
+  .hero h1{margin:0;font-size:clamp(38px,6vw,78px);letter-spacing:-.065em;line-height:.92;font-weight:760}
+  .hero p{margin:0;max-width:470px;color:var(--muted);font-size:16px;line-height:1.6}
+  .grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px}
+  .card{
+    min-height:370px;
+    background:var(--card);
+    border:1px solid rgba(10,10,10,.09);
+    border-radius:var(--radius);
+    padding:22px;
+    overflow:hidden;
+    position:relative;
+  }
+  .card.wide{grid-column:1/-1;min-height:430px}
+  .meta{display:flex;align-items:center;justify-content:space-between;gap:12px;position:relative;z-index:2}
+  .index{font-variant-numeric:tabular-nums;color:var(--muted);font-size:13px}
+  .title{font-size:14px;font-weight:650;letter-spacing:-.02em}
+  .stage{height:285px;display:grid;place-items:center;position:relative}
+  .hint{position:absolute;left:22px;bottom:18px;color:var(--muted);font-size:12px}
+  .solid-btn{
+    border:0;background:var(--ink);color:#fff;border-radius:999px;padding:16px 30px;font-weight:700;cursor:pointer;
+    transform:translateY(0) scale(1);transition:transform .18s cubic-bezier(.2,.9,.2,1),background .18s ease;
+  }
+  .solid-btn:hover{transform:translateY(-2px) scale(1.015)}
+  .solid-btn:active{transform:translateY(1px) scale(.97)}
+  .solid-btn.clicked{background:var(--accent)}
+  .loader-wrap{width:86px;height:86px;border-radius:50%;border:8px solid #eceae5;position:relative}
+  .loader-wrap::after{content:"";position:absolute;inset:-8px;border:8px solid transparent;border-top-color:var(--ink);border-radius:50%;animation:spin .8s linear infinite}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  .check-btn{border:0;background:var(--ink);width:86px;height:86px;border-radius:28px;display:grid;place-items:center;cursor:pointer}
+  .check-btn svg{width:44px;height:44px;overflow:visible}
+  .check-btn path{fill:none;stroke:#fff;stroke-width:6;stroke-linecap:round;stroke-linejoin:round;stroke-dasharray:70;stroke-dashoffset:70}
+  .check-btn.active path{animation:draw .55s cubic-bezier(.2,.9,.2,1) forwards}
+  @keyframes draw{to{stroke-dashoffset:0}}
+  .island{
+    width:156px;height:48px;border-radius:28px;background:#000;color:#fff;display:flex;align-items:center;justify-content:center;
+    cursor:pointer;overflow:hidden;padding:0 16px;transition:width .45s cubic-bezier(.17,.84,.32,1.12),height .45s cubic-bezier(.17,.84,.32,1.12),border-radius .45s ease;
+  }
+  .island .compact{display:flex;align-items:center;gap:9px;font-size:13px;font-weight:650;white-space:nowrap}
+  .island .dot{width:8px;height:8px;border-radius:50%;background:var(--accent)}
+  .island .expanded{display:none;width:100%;align-items:center;gap:14px}
+  .island.open{width:360px;height:110px;border-radius:34px}
+  .island.open .compact{display:none}
+  .island.open .expanded{display:flex}
+  .album{width:66px;height:66px;border-radius:18px;background:var(--accent);display:grid;place-items:center;font-weight:800}
+  .track-text{flex:1;min-width:0}
+  .track-title{font-size:14px;font-weight:700}
+  .track-sub{font-size:12px;color:#a7a7a7;margin-top:5px}
+  .bars{display:flex;gap:3px;align-items:center}
+  .bars span{display:block;width:3px;background:#fff;border-radius:3px;animation:bar 1s ease-in-out infinite alternate}
+  .bars span:nth-child(1){height:12px}.bars span:nth-child(2){height:23px;animation-delay:.2s}.bars span:nth-child(3){height:16px;animation-delay:.35s}.bars span:nth-child(4){height:27px;animation-delay:.1s}
+  @keyframes bar{to{transform:scaleY(.35)}}
+  .player{width:min(430px,92%);background:#0b0b0b;color:white;border-radius:32px;padding:18px;display:grid;grid-template-columns:82px 1fr;gap:18px}
+  .cover{width:82px;height:82px;border-radius:22px;background:var(--accent);display:grid;place-items:center;font-size:28px;font-weight:800}
+  .player-info{min-width:0;display:flex;flex-direction:column;justify-content:center}
+  .song{font-size:17px;font-weight:760;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .artist{font-size:13px;color:#aaa;margin-top:4px}
+  .transport{display:flex;align-items:center;gap:12px;margin-top:15px}
+  .play-btn{width:42px;height:42px;border:0;border-radius:50%;background:#fff;display:grid;place-items:center;cursor:pointer;padding:0}
+  .play-btn svg{width:18px;height:18px;fill:#000}
+  .eq-mini{display:flex;gap:3px;align-items:center;height:24px}
+  .eq-mini i{display:block;width:3px;background:#fff;border-radius:3px;height:5px}
+  .player.playing .eq-mini i:nth-child(1){animation:eq .55s ease-in-out infinite alternate}
+  .player.playing .eq-mini i:nth-child(2){animation:eq .8s ease-in-out .12s infinite alternate}
+  .player.playing .eq-mini i:nth-child(3){animation:eq .45s ease-in-out .2s infinite alternate}
+  @keyframes eq{to{height:22px}}
+  .range-shell{width:min(500px,90%)}
+  .range-top{display:flex;justify-content:space-between;font-size:13px;font-variant-numeric:tabular-nums;margin-bottom:12px}
+  input[type=range]{width:100%;appearance:none;height:8px;border-radius:999px;background:linear-gradient(to right,var(--accent) 0 var(--p,42%),#e8e5df var(--p,42%) 100%);outline:none}
+  input[type=range]::-webkit-slider-thumb{appearance:none;width:26px;height:26px;border-radius:50%;background:#000;border:4px solid #fff;box-shadow:0 0 0 1px rgba(0,0,0,.08);cursor:grab}
+  input[type=range]::-moz-range-thumb{width:18px;height:18px;border-radius:50%;background:#000;border:4px solid #fff;cursor:grab}
+  .volume{width:min(480px,90%);display:flex;align-items:center;gap:14px}
+  .speaker{width:42px;height:42px;border-radius:15px;background:#000;color:#fff;display:grid;place-items:center;flex:none}
+  .volume-track{height:18px;background:#e8e5df;border-radius:999px;flex:1;position:relative;cursor:pointer}
+  .volume-fill{height:100%;width:66%;background:var(--accent);border-radius:inherit}
+  .volume-knob{position:absolute;top:50%;left:66%;width:30px;height:30px;border-radius:50%;background:#000;border:5px solid #fff;transform:translate(-50%,-50%) scaleX(1);box-shadow:0 0 0 1px rgba(0,0,0,.08)}
+  .switch{width:96px;height:54px;border-radius:999px;background:#ddd9d1;padding:5px;cursor:pointer;position:relative;transition:background .25s ease}
+  .switch::after{content:"";display:block;width:44px;height:44px;border-radius:50%;background:#fff;box-shadow:0 4px 14px rgba(0,0,0,.13);transform:translateX(0);transition:transform .34s cubic-bezier(.17,.84,.32,1.12)}
+  .switch.on{background:var(--accent)}
+  .switch.on::after{transform:translateX(42px)}
+  .tabs{position:relative;display:flex;padding:5px;background:#efede8;border-radius:999px;isolation:isolate}
+  .tabs button{position:relative;z-index:2;border:0;background:transparent;padding:11px 19px;border-radius:999px;cursor:pointer;color:#68645f;font-weight:650}
+  .tabs button.active{color:#fff}
+  .liquid-indicator{position:absolute;z-index:1;top:5px;left:5px;height:calc(100% - 10px);width:88px;background:#000;border-radius:999px;transform:translateX(0);transition:transform .45s cubic-bezier(.17,.84,.32,1.12),width .45s cubic-bezier(.17,.84,.32,1.12)}
+  .chart-wrap{width:min(670px,94%);height:255px;position:relative}
+  .chart-wrap svg{width:100%;height:100%;overflow:visible}
+  .grid-line{stroke:#e7e3dd;stroke-width:1}
+  .chart-line{fill:none;stroke:var(--accent);stroke-width:5;stroke-linecap:round;stroke-linejoin:round;stroke-dasharray:1200;stroke-dashoffset:1200;animation:chartdraw 1.8s cubic-bezier(.2,.85,.2,1) forwards}
+  @keyframes chartdraw{to{stroke-dashoffset:0}}
+  .chart-hit{fill:none;stroke:transparent;stroke-width:28;cursor:crosshair}
+  .chart-tip{position:absolute;pointer-events:none;background:#000;color:#fff;border-radius:13px;padding:8px 10px;font-size:12px;opacity:0;transform:translate(-50%,-120%)}
+  .cmd{width:min(500px,94%);border:1px solid #dedbd4;border-radius:24px;overflow:hidden;background:#fff;box-shadow:0 22px 60px rgba(0,0,0,.1)}
+  .cmd-input{display:flex;align-items:center;gap:10px;padding:14px 16px;border-bottom:1px solid #ece9e3}
+  .cmd-input input{border:0;outline:0;width:100%;font-size:15px}
+  .key{border:1px solid #dedbd4;background:#f5f3ef;border-radius:7px;padding:3px 7px;color:#6f6b65;font-size:11px}
+  .results{padding:8px}
+  .result{display:flex;align-items:center;justify-content:space-between;padding:11px 12px;border-radius:12px;font-size:14px}
+  .result.active{background:#0a0a0a;color:#fff}
+  .result small{color:#8c8780}
+  .result.active small{color:#aaa}
+  .filter{width:min(560px,94%)}
+  .filter-box{display:flex;align-items:center;gap:8px;flex-wrap:wrap;border:1px solid #dcd9d3;background:#fff;border-radius:22px;padding:10px}
+  .chip{border:0;background:#0a0a0a;color:#fff;border-radius:999px;padding:8px 11px;font-size:12px;cursor:pointer}
+  .filter-box input{flex:1;min-width:130px;border:0;outline:0;padding:8px 6px}
+  .filter-output{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}
+  .filter-item{padding:10px 13px;background:#ece9e3;border-radius:13px;font-size:13px}
+  .notify-demo{display:flex;align-items:center;gap:14px}
+  .notify-trigger{border:1px solid #d8d5cf;background:#fff;border-radius:999px;padding:13px 18px;cursor:pointer;font-weight:650}
+  .toast{position:absolute;right:24px;bottom:24px;width:min(360px,calc(100% - 48px));background:#000;color:#fff;border-radius:22px;padding:16px;display:flex;gap:12px;align-items:flex-start;opacity:0;transform:translateY(18px) scale(.97);pointer-events:none;transition:opacity .25s ease,transform .35s cubic-bezier(.17,.84,.32,1.12)}
+  .toast.show{opacity:1;transform:translateY(0) scale(1)}
+  .toast-icon{width:34px;height:34px;border-radius:12px;background:var(--accent);display:grid;place-items:center;flex:none}
+  .toast strong{display:block;font-size:13px}.toast p{margin:4px 0 0;color:#b9b9b9;font-size:12px;line-height:1.4}
+  .accent-dot{width:10px;height:10px;border-radius:50%;background:var(--accent);display:inline-block}
+  @media(max-width:850px){.grid{grid-template-columns:1fr}.card.wide{grid-column:auto}.hero{display:block}.hero p{margin-top:18px}.card{min-height:340px}.stage{height:255px}.island.open{width:min(92vw,340px)}}
+</style>
+</head>
+<body>
+<main class="page">
+  <header class="hero">
+    <div><h1>Morph UI<br>States</h1></div>
+    <p>元プロンプトのモーフィング順を13個の独立UIへ分解したHTMLデモ。黒白を基調に、アクセントカラーは1色だけ使用しています。</p>
+  </header>
+
+  <section class="grid">
+    <article class="card"><div class="meta"><span class="index">01</span><span class="title">Button</span></div><div class="stage"><button class="solid-btn" id="cta">Continue</button></div><div class="hint">Click</div></article>
+
+    <article class="card"><div class="meta"><span class="index">02</span><span class="title">Loader</span></div><div class="stage"><div class="loader-wrap" aria-label="loading"></div></div><div class="hint">Continuous state</div></article>
+
+    <article class="card"><div class="meta"><span class="index">03</span><span class="title">Checkmark</span></div><div class="stage"><button class="check-btn" id="checkBtn" aria-label="success"><svg viewBox="0 0 48 48"><path d="M10 25l9 9 19-21"/></svg></button></div><div class="hint">Click to redraw</div></article>
+
+    <article class="card"><div class="meta"><span class="index">04</span><span class="title">Dynamic Island</span></div><div class="stage"><div class="island" id="island"><div class="compact"><span class="dot"></span><span>Now Playing</span></div><div class="expanded"><div class="album">A</div><div class="track-text"><div class="track-title">AMATERASU</div><div class="track-sub">Realtime Voice · SAIKING LAB</div></div><div class="bars"><span></span><span></span><span></span><span></span></div></div></div></div><div class="hint">Click to expand</div></article>
+
+    <article class="card wide"><div class="meta"><span class="index">05</span><span class="title">Music Player</span></div><div class="stage"><div class="player" id="player"><div class="cover">A</div><div class="player-info"><div class="song">Realtime Conversation</div><div class="artist">AMATERASU · SAIKING LAB</div><div class="transport"><button class="play-btn" id="playBtn" aria-label="play"><svg id="playIcon" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg></button><div class="eq-mini"><i></i><i></i><i></i></div></div></div></div></div><div class="hint">Play / Pause</div></article>
+
+    <article class="card"><div class="meta"><span class="index">06</span><span class="title">Progress Bar</span></div><div class="stage"><div class="range-shell"><div class="range-top"><span id="elapsed">01:08</span><span>03:42</span></div><input id="progress" type="range" min="0" max="222" value="68" style="--p:30.6%"></div></div><div class="hint">Drag</div></article>
+
+    <article class="card"><div class="meta"><span class="index">07</span><span class="title">Volume Slider</span></div><div class="stage"><div class="volume"><div class="speaker">◖</div><div class="volume-track" id="volumeTrack"><div class="volume-fill" id="volumeFill"></div><div class="volume-knob" id="volumeKnob"></div></div></div></div><div class="hint">Drag to the right edge</div></article>
+
+    <article class="card"><div class="meta"><span class="index">08</span><span class="title">Switch</span></div><div class="stage"><div class="switch" id="switch" role="switch" aria-checked="false" tabindex="0"></div></div><div class="hint">Click</div></article>
+
+    <article class="card"><div class="meta"><span class="index">09</span><span class="title">Liquid Tag Indicator</span></div><div class="stage"><div class="tabs" id="tabs"><div class="liquid-indicator" id="indicator"></div><button class="active">Voice</button><button>Text</button><button>Tools</button></div></div><div class="hint">Select a tag</div></article>
+
+    <article class="card wide"><div class="meta"><span class="index">10</span><span class="title">Self-drawing Chart + Tooltip</span></div><div class="stage"><div class="chart-wrap" id="chartWrap"><svg viewBox="0 0 720 250" preserveAspectRatio="none"><line class="grid-line" x1="0" y1="50" x2="720" y2="50"/><line class="grid-line" x1="0" y1="125" x2="720" y2="125"/><line class="grid-line" x1="0" y1="200" x2="720" y2="200"/><path class="chart-line" id="chartLine" d="M10 190 C70 182,82 102,142 117 S220 173,284 126 S347 54,414 84 S492 160,551 108 S626 44,710 60"/><path class="chart-hit" id="chartHit" d="M10 190 C70 182,82 102,142 117 S220 173,284 126 S347 54,414 84 S492 160,551 108 S626 44,710 60"/></svg><div class="chart-tip" id="chartTip">68 ms</div></div></div><div class="hint">Hover the line</div></article>
+
+    <article class="card"><div class="meta"><span class="index">11</span><span class="title">⌘K Command Panel</span></div><div class="stage"><div class="cmd"><div class="cmd-input"><span>⌕</span><input id="cmdSearch" value="" placeholder="Search commands..."><span class="key">⌘K</span></div><div class="results" id="cmdResults"><div class="result active" data-text="Start realtime voice"><span>Start realtime voice</span><small>↵</small></div><div class="result" data-text="Open audio settings"><span>Open audio settings</span><small>S</small></div><div class="result" data-text="Switch model"><span>Switch model</span><small>M</small></div></div></div></div><div class="hint">Type to filter</div></article>
+
+    <article class="card"><div class="meta"><span class="index">12</span><span class="title">Input Filter</span></div><div class="stage"><div class="filter"><div class="filter-box"><button class="chip" data-filter="Voice">Voice ×</button><button class="chip" data-filter="Realtime">Realtime ×</button><input id="filterInput" placeholder="Add filter and press Enter"></div><div class="filter-output" id="filterOutput"><span class="filter-item">AMATERASU</span><span class="filter-item">LFM Audio</span><span class="filter-item">Japanese</span></div></div></div><div class="hint">Enter adds a filter · click a chip to remove</div></article>
+
+    <article class="card wide"><div class="meta"><span class="index">13</span><span class="title">Notification</span></div><div class="stage"><div class="notify-demo"><span class="accent-dot"></span><button class="notify-trigger" id="notifyBtn">Send notification</button></div><div class="toast" id="toast"><div class="toast-icon">✓</div><div><strong>Realtime session ready</strong><p>AMATERASU is connected and listening.</p></div></div></div><div class="hint">Click</div></article>
+  </section>
+</main>
+<script>
+const $=(s,r=document)=>r.querySelector(s), $$=(s,r=document)=>[...r.querySelectorAll(s)];
+
+$('#cta').addEventListener('click',e=>{e.currentTarget.classList.toggle('clicked');e.currentTarget.textContent=e.currentTarget.classList.contains('clicked')?'Ready':'Continue'});
+
+$('#checkBtn').addEventListener('click',e=>{const b=e.currentTarget;b.classList.remove('active');void b.offsetWidth;b.classList.add('active')});
+$('#checkBtn').classList.add('active');
+
+$('#island').addEventListener('click',e=>e.currentTarget.classList.toggle('open'));
+
+let playing=false;
+$('#playBtn').addEventListener('click',()=>{playing=!playing;$('#player').classList.toggle('playing',playing);$('#playIcon').innerHTML=playing?'<path d="M6 5h4v14H6zm8 0h4v14h-4z"/>':'<path d="M8 5v14l11-7z"/>'});
+
+const progress=$('#progress');
+function fmt(sec){sec=Number(sec);return `${String(Math.floor(sec/60)).padStart(2,'0')}:${String(sec%60).padStart(2,'0')}`}
+function syncProgress(){const p=(progress.value/progress.max)*100;progress.style.setProperty('--p',`${p}%`);$('#elapsed').textContent=fmt(progress.value)}
+progress.addEventListener('input',syncProgress);syncProgress();
+
+const vt=$('#volumeTrack'), vf=$('#volumeFill'), vk=$('#volumeKnob');
+let dragging=false;
+function setVolume(x){const r=vt.getBoundingClientRect();let raw=(x-r.left)/r.width;const clamped=Math.max(0,Math.min(1,raw));vf.style.width=`${clamped*100}%`;vk.style.left=`${clamped*100}%`;const stretch=raw>1?Math.min(1.65,1+(raw-1)*3):1;vk.style.transform=`translate(-50%,-50%) scaleX(${stretch})`;}
+vt.addEventListener('pointerdown',e=>{dragging=true;vt.setPointerCapture(e.pointerId);setVolume(e.clientX)});
+vt.addEventListener('pointermove',e=>{if(dragging)setVolume(e.clientX)});
+vt.addEventListener('pointerup',e=>{dragging=false;vk.style.transform='translate(-50%,-50%) scaleX(1)'});
+
+const sw=$('#switch');
+function toggleSwitch(){sw.classList.toggle('on');sw.setAttribute('aria-checked',sw.classList.contains('on'))}
+sw.addEventListener('click',toggleSwitch);sw.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();toggleSwitch()}});
+
+const tabs=$('#tabs'), ind=$('#indicator');
+function placeIndicator(btn){const tr=tabs.getBoundingClientRect(), br=btn.getBoundingClientRect();ind.style.width=`${br.width}px`;ind.style.transform=`translateX(${br.left-tr.left-5}px)`;$$('button',tabs).forEach(b=>b.classList.toggle('active',b===btn))}
+$$('button',tabs).forEach(b=>b.addEventListener('click',()=>placeIndicator(b)));
+addEventListener('load',()=>placeIndicator($('button',tabs)));addEventListener('resize',()=>placeIndicator($('.active',tabs)));
+
+const chartWrap=$('#chartWrap'), hit=$('#chartHit'), tip=$('#chartTip');
+hit.addEventListener('pointermove',e=>{const r=chartWrap.getBoundingClientRect();const x=Math.max(0,Math.min(r.width,e.clientX-r.left));const pct=x/r.width;const ms=Math.round(96-(pct*38)+Math.sin(pct*14)*9);tip.textContent=`${ms} ms`;tip.style.left=`${x}px`;tip.style.top=`${Math.max(52,e.clientY-r.top)}px`;tip.style.opacity='1'});
+hit.addEventListener('pointerleave',()=>tip.style.opacity='0');
+
+const cmdSearch=$('#cmdSearch'), results=$$('#cmdResults .result');
+cmdSearch.addEventListener('input',()=>{const q=cmdSearch.value.toLowerCase();results.forEach(r=>r.style.display=r.dataset.text.toLowerCase().includes(q)?'flex':'none')});
+document.addEventListener('keydown',e=>{if((e.metaKey||e.ctrlKey)&&e.key.toLowerCase()==='k'){e.preventDefault();cmdSearch.focus();cmdSearch.select()}});
+
+const filterInput=$('#filterInput');
+filterInput.addEventListener('keydown',e=>{if(e.key==='Enter'&&filterInput.value.trim()){const chip=document.createElement('button');chip.className='chip';chip.textContent=filterInput.value.trim()+' ×';chip.onclick=()=>chip.remove();filterInput.before(chip);filterInput.value=''}});
+$$('.chip').forEach(chip=>chip.addEventListener('click',()=>chip.remove()));
+
+let toastTimer;
+$('#notifyBtn').addEventListener('click',()=>{const t=$('#toast');t.classList.add('show');clearTimeout(toastTimer);toastTimer=setTimeout(()=>t.classList.remove('show'),2600)});
+</script>
+</body>
+</html>
